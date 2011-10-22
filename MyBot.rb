@@ -7,7 +7,7 @@ require 'set'
 def weight(ai, type)
   case type
   when :food then 1_000.0 / ai.my_ants.count
-  when :explore then 100.0
+  when :explore then 300.0
   when :raze then 100.0 * ai.my_ants.count
   when :kill then 20.0 * ai.my_ants.count
   when :defend then 0.1 * ai.my_ants.count
