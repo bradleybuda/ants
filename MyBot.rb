@@ -33,8 +33,11 @@ ai.run do |ai|
   squares = Square.all
   food = squares.find_all(&:has_food?)
   log "I know about #{food.size} food"
-  unobserved = squares.reject(&:observed?)
-  log "There are #{unobserved.size} never-visited squares"
+
+  if food.empty?
+    unobserved = squares.reject(&:observed?)
+    log "There are #{unobserved.size} never-visited squares"
+  end
 
   ai.my_ants.each do |ant|
     log "Where should ant at #{ant.row}, #{ant.col} go?"
