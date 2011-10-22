@@ -9,6 +9,8 @@ module Enumerable
   end
 end
 
+JITTER = 12
+
 ai = AI.new
 
 ai.setup do |ai|
@@ -23,21 +25,25 @@ ai.run do |ai|
   off_limits = Set.new(ai.my_ants.map { |ant| ant.square })
 
   ai.my_ants.each do |ant|
-    square = ant.square
-    square.observe!
+    # note the presence of any non-water squares
+    ant.visible_squares.each { |square| square.observe! }
 
-    valid = square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
-    next if valid.empty? # blocked by pending moves
+    # make sure we're not stuck
+    valid = ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
+    next if valid.empty? # stay put
 
-    # find unexplored
-    unexplored = valid.reject do |neighbor|
-      neighbor.observed?
-    end
+    # is there any food?
+    food = Square.all.find_all(&:has_food?)
+    target = food.sort_by { |uo| ant.square.distance2(uo) }.first
 
-    # explore deterministically but unstick yourself randomly
-    destination = unexplored.first || valid.rand
-    off_limits.add(destination)
+    # find the closest unexplored square by line-of-sight
+    unobserved = Square.all.reject(&:observed?)
+    target ||= unobserved.sort_by { |uo| ant.square.distance2(uo) }.first
 
-    ant.order square.direction_to(destination)
+    # route that way by line-of-sight + jitter (to avoid getting stuck until we have real routing)
+    next_step = ant.square.neighbors.reject { |sq| off_limits.member?(sq) }.sort_by { |neighbor| neighbor.distance2(target) + rand(JITTER) }.first
+    off_limits.add(next_step)
+
+    ant.order ant.square.direction_to(next_step)
   end
 end

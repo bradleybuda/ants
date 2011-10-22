@@ -30,6 +30,14 @@ class Ant
   def order direction
     @ai.order self, direction
   end
+
+  def visible_squares
+    Square.all.find_all { |square| visible(square) }
+  end
+
+  def visible(square)
+    @square.distance2(square) < @ai.viewradius2
+  end
 end
 
 # Represent a single field of the map. These fields are either land or
@@ -43,6 +51,10 @@ class Square
         Square.new(row, col)
       end
     end
+  end
+
+  def self.all
+    @@index.flatten.compact
   end
 
   def self.rows
@@ -103,6 +115,10 @@ class Square
     @observed
   end
 
+  def has_food?
+    @food
+  end
+
   def destroy!
     neighbors.each do |neighbor|
       neighbor.remove_dead_neighbor(self)
@@ -118,6 +134,12 @@ class Square
 
   def coords
     [@row, @col]
+  end
+
+  def distance2(other)
+    dr = [(@row - other.row).abs, Square.rows - (@row - other.row).abs].min
+    dc = [(@col - other.col).abs, Square.cols - (@col - other.col).abs].min
+    (dr**2 + dc**2)
   end
 
   def reset!
