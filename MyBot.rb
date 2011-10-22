@@ -70,6 +70,7 @@ ai.run do |ai|
   end
 
   # These lists are useful to all ants - all
+  log "Looking for destinations"
   destinations = Square.all.map do |square|
     if square.has_food?
       [:food, square]
@@ -83,6 +84,7 @@ ai.run do |ai|
       [:kill, square]
     end
   end.compact
+  log "Found #{destinations.size} possible destinations"
 
   # If there's absolutely nowhere to go
   destinations = [[:random, Square.all.rand]] if destinations.empty?
