@@ -16,16 +16,16 @@ ai.setup do |ai|
 end
 
 ai.run do |ai|
-  # don't run in to yourself
-  next_destinations = Set.new
+  # don't run in to yourself or switch places with a buddy
+  off_limits = Set.new
 
   ai.my_ants.each do |ant|
     square = ant.square
-    # mark current square visited
+    off_limits.add square
     square.observe!
 
     neighbors = square.neighbors
-    valid = neighbors.reject { |neighbor| next_destinations.include?(neighbor) }
+    valid = neighbors.reject { |neighbor| off_limits.include?(neighbor) }
     next if neighbors.empty? # blocked by pending moves
 
     # find unexplored
@@ -33,9 +33,9 @@ ai.run do |ai|
       neighbor.observed?
     end
 
-    # explore randomly but move with intent in an explored area
-    destination = unexplored.rand || neighbors.rand
-    next_destinations.add(destination)
+    # explore deterministically but unstick yourself randomly
+    destination = unexplored.first || neighbors.rand
+    off_limits.add(destination)
 
     ant.order square.direction_to(destination)
   end
