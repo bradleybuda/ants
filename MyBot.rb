@@ -73,7 +73,7 @@ ai.run do |ai|
   destinations = Square.all.map do |square|
     if square.has_food?
       [:food, square]
-    elsif !square.observed?
+    elsif square.frontier?
       [:explore, square]
     elsif square.hill && square.hill != 0
       [:raze, square]

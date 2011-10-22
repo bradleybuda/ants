@@ -177,6 +177,10 @@ class Square
     @observed = true
   end
 
+  def frontier?
+    !observed? && neighbors.any?(&:observed?)
+  end
+
   def observed?
     @observed
   end
