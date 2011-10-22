@@ -102,7 +102,7 @@ ai.run do |ai|
     log "Next ant in queue is #{ant.id}. After this we have #{ants_to_move.map(&:id)} to move."
 
     # delay orders if we're stuck
-    valid = ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
+    valid = Set.new(ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) })
     if valid.empty?
       log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck, delaying orders"
       ants_to_move.push(ant)
@@ -131,7 +131,7 @@ ai.run do |ai|
                 else
                   # This shouldn't happen (except in the test cases)
                   log "No route exists to goal! Map is:\n" + Square.dump_map(ant.square, ant.goal.last)
-                  valid.rand
+                  valid.first
                 end
 
     # Double-check validity of first step
@@ -139,7 +139,7 @@ ai.run do |ai|
       log "Can't execute route, next step is invalid. Clearing route and goal and moving randomly"
       ant.goal  = nil
       ant.route = nil
-      next_step = valid.rand
+      next_step = valid.first
     end
 
     log "Moving to #{next_step.row}, #{next_step.col}"
