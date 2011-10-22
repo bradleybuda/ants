@@ -16,25 +16,26 @@ ai.setup do |ai|
 end
 
 ai.run do |ai|
-  # don't run in to yourself or switch places with a buddy
-  off_limits = Set.new
+  # don't move to a square that an ant is already on because:
+  #
+  # 1) it's not interesting
+  # 2) he might be stuck, in which case this is suicide
+  off_limits = Set.new(ai.my_ants.map { |ant| ant.square })
 
   ai.my_ants.each do |ant|
     square = ant.square
-    off_limits.add square
     square.observe!
 
-    neighbors = square.neighbors
-    valid = neighbors.reject { |neighbor| off_limits.include?(neighbor) }
-    next if neighbors.empty? # blocked by pending moves
+    valid = square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
+    next if valid.empty? # blocked by pending moves
 
     # find unexplored
-    unexplored = neighbors.reject do |neighbor|
+    unexplored = valid.reject do |neighbor|
       neighbor.observed?
     end
 
     # explore deterministically but unstick yourself randomly
-    destination = unexplored.first || neighbors.rand
+    destination = unexplored.first || valid.rand
     off_limits.add(destination)
 
     ant.order square.direction_to(destination)
