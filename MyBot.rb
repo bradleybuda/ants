@@ -5,8 +5,10 @@ require 'set'
 
 def weight(type)
   case type
-  when :food then 1_000
-  when :explore then 100
+  when :food then 800
+  when :raze then 500
+  when :kill then 250
+  when :explore then 200
   when :random then 1
   end
 end
@@ -43,6 +45,12 @@ ai.run do |ai|
       [:food, square]
     elsif !square.observed?
       [:explore, square]
+    elsif square.hill && square.hill != 0
+      [:raze, square]
+#    elsif square.hill && square.hill.owner == 0 # have to work on defend because we can't plug our hill
+#      [:defend, square]
+    elsif square.ant && square.ant.enemy?
+      [:kill, square]
     end
   end.compact
 
