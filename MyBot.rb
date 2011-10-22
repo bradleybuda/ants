@@ -8,9 +8,9 @@ def weight(ai, type)
   case type
   when :food then 1_000.0 / ai.my_ants.count
   when :explore then 100.0
-  when :raze then 50.0 * ai.my_ants.count
+  when :raze then 100.0 * ai.my_ants.count
   when :kill then 20.0 * ai.my_ants.count
-  when :defend then 1.0 * ai.my_ants.count
+  when :defend then 0.1 * ai.my_ants.count
   when :random then 0.01
   end
 end
