@@ -2,7 +2,6 @@ $:.unshift File.dirname($0)
 require 'ants.rb'
 
 require 'set'
-VISITED_SQUARES = Set.new
 
 module Enumerable
   def rand
@@ -21,28 +20,23 @@ ai.run do |ai|
   next_destinations = Set.new
 
   ai.my_ants.each do |ant|
+    square = ant.square
     # mark current square visited
-    VISITED_SQUARES.add ant.square.coords
+    square.observe!
 
-    # find valid moves
-    valid = [:N, :E, :S, :W].find_all do |dir|
-      neighbor = ant.square.neighbor(dir)
-      neighbor.land? && !next_destinations.member?(neighbor.coords)
-    end
+    neighbors = square.neighbors
+    valid = neighbors.reject { |neighbor| next_destinations.include?(neighbor) }
+    next if neighbors.empty? # blocked by pending moves
 
     # find unexplored
-    unexplored = valid.reject do |dir|
-      coords = ant.square.neighbor(dir).coords
-      VISITED_SQUARES.include?(coords)
+    unexplored = neighbors.reject do |neighbor|
+      neighbor.observed?
     end
 
-    next if valid.empty? # when can this happen?!?
-
     # explore randomly but move with intent in an explored area
-    direction = unexplored.rand || valid.first
-
-    destination = ant.square.neighbor(direction).coords
+    destination = unexplored.rand || neighbors.rand
     next_destinations.add(destination)
-    ant.order direction
+
+    ant.order square.direction_to(destination)
   end
 end

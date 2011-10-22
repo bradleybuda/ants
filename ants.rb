@@ -1,7 +1,3 @@
-# Ants AI Challenge framework
-# by Matma Rex (matma.rex@gmail.com)
-# Released under CC-BY 3.0 license
-
 # Represents a single ant.
 class Ant
   # Owner of this ant. If it's 0, it's your ant.
@@ -36,54 +32,97 @@ class Ant
   end
 end
 
-# Represent a single field of the map.
+# Represent a single field of the map. These fields are either land or
+# unknown - once a square is observed as water, it is deleted
 class Square
-  # Ant which sits on this square, or nil. The ant may be dead.
-  attr_accessor :ant
-  # Which row this square belongs to.
-  attr_accessor :row
-  # Which column this square belongs to.
-  attr_accessor :col
+  @@index = nil
 
-  attr_accessor :water, :food, :hill, :ai
+  def self.create_squares(rows, cols)
+    @@index = Array.new(rows) do |row|
+      Array.new(cols) do |col|
+        Square.new(row, col)
+      end
+    end
+  end
 
-  def initialize water, food, hill, ant, row, col, ai
-    @water, @food, @hill, @ant, @row, @col, @ai = water, food, hill, ant, row, col, ai
+  def self.rows
+    @@index.size
+  end
+
+  def self.cols
+    @@index.first.size
+  end
+
+  def self.reset!
+    @@index.each { |row| row.each { |square| square.reset! if square } }
+  end
+
+  def self.at(row, col)
+    @@index[row][col]
+  end
+
+  attr_reader :row, :col
+  attr_accessor :hill, :food, :ant
+
+  def initialize(row, col)
+    @row = row
+    @col = col
+    @observed = false
+  end
+
+  def neighbors
+    @neighbors ||= make_neighbors
+    @neighbors.values
+  end
+
+  def direction_to_neighbors
+    @neighbors ||= make_neighbors
+  end
+
+  def make_neighbors
+    possible_neighbors = [[:e, 0, 1], [:w, 0, -1], [:s, 1, 0], [:n, -1, 0]].map do |direction, row_offset, col_offset|
+      neighbor_row = (@row + row_offset) % Square.rows
+      neighbor_col = (@col + col_offset) % Square.cols
+      [direction, Square.at(neighbor_row, neighbor_col)]
+    end
+
+    actual_neighbors = possible_neighbors.reject { |direction, neighbor| neighbor.nil? }
+
+    Hash[actual_neighbors]
+  end
+
+  def direction_to(destination)
+    direction_to_neighbors.find { |direction, neighbor| neighbor == destination }.first
+  end
+
+  def observe!
+    @observed = true
+  end
+
+  def observed?
+    @observed
+  end
+
+  def destroy!
+    neighbors.each do |neighbor|
+      neighbor.remove_dead_neighbor(self)
+    end
+
+    @@index[@row][@col] = nil
+  end
+
+  def remove_dead_neighbor(dead_neighbor)
+    direction = direction_to(dead_neighbor)
+    @neighbors.delete(direction)
   end
 
   def coords
     [@row, @col]
   end
 
-  # Returns true if this square is not water. Square is passable if it's not water, it doesn't contain alive ants and it doesn't contain food.
-  def land?; !@water; end
-  # Returns true if this square is water.
-  def water?; @water; end
-  # Returns true if this square contains food.
-  def food?; @food; end
-  # Returns owner number if this square is a hill, false if not
-  def hill?; @hill; end
-  # Returns true if this square has an alive ant.
-  def ant?; @ant and @ant.alive?; end;
-
-  # Returns a square neighboring this one in given direction.
-  def neighbor direction
-    direction=direction.to_s.upcase.to_sym # canonical: :N, :E, :S, :W
-
-    case direction
-    when :N
-      row, col = @ai.normalize @row-1, @col
-    when :E
-      row, col = @ai.normalize @row, @col+1
-    when :S
-      row, col = @ai.normalize @row+1, @col
-    when :W
-      row, col = @ai.normalize @row, @col-1
-    else
-      raise 'incorrect direction'
-    end
-
-    return @ai.map[row][col]
+  def reset!
+    @food = @hill = false
+    @ant = nil
   end
 end
 
@@ -142,7 +181,7 @@ class AI
     @stdout.puts 'go'
     @stdout.flush
 
-    @map=Array.new(@rows){|row| Array.new(@cols){|col| Square.new false, false, false, nil, row, col, self } }
+    Square.create_squares(@rows, @cols)
     @did_setup=true
   end
 
@@ -183,6 +222,10 @@ class AI
       end
     end
 
+    STDERR.puts "loadtime: #{@loadtime}"
+    STDERR.puts "rows: #{@rows}"
+    STDERR.puts "cols: #{@cols}"
+
     @viewradius=Math.sqrt @viewradius2
     @attackradius=Math.sqrt @attackradius2
     @spawnradius=Math.sqrt @spawnradius2
@@ -211,13 +254,7 @@ class AI
     end
 
     # reset the map data
-    @map.each do |row|
-      row.each do |square|
-        square.food=false
-        square.ant=nil
-        square.hill=false
-      end
-    end
+    Square.reset!
 
     @my_ants=[]
     @enemy_ants=[]
@@ -227,16 +264,18 @@ class AI
       row, col = row.to_i, col.to_i
       owner = owner.to_i if owner
 
+      square = Square.at(row, col)
+
       case type
       when 'w'
-        @map[row][col].water=true
+        square.destroy!
       when 'f'
-        @map[row][col].food=true
+        square.food = true
       when 'h'
-        @map[row][col].hill=owner
+        square.hill = owner
       when 'a'
-        a=Ant.new true, owner, @map[row][col], self
-        @map[row][col].ant = a
+        a=Ant.new true, owner, Square.at(row, col), self
+        square.ant = a
 
         if owner==0
           my_ants.push a
@@ -244,8 +283,8 @@ class AI
           enemy_ants.push a
         end
       when 'd'
-        d=Ant.new false, owner, @map[row][col], self
-        @map[row][col].ant = d
+        d=Ant.new false, owner, Square.at(row, col), self
+        square.ant = d
       when 'r'
         # pass
       else
