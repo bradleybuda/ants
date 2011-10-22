@@ -3,6 +3,13 @@ require 'ants.rb'
 
 require 'set'
 
+def weight(type)
+  case type
+  when :food then 10
+  when :explore then 1
+  end
+end
+
 module Enumerable
   def rand
     sort_by { Kernel.rand }.first
@@ -29,15 +36,16 @@ ai.run do |ai|
     ant.visible_squares.each { |square| square.observe! }
   end
 
-  # These lists are useful to all ants
-  squares = Square.all
-  food = squares.find_all(&:has_food?)
-  log "I know about #{food.size} food"
+  # These lists are useful to all ants - all
+  destinations = Square.all.map do |square|
+    if square.has_food?
+      [:food, square]
+    elsif !square.observed?
+      [:explore, square]
+    end
+  end.compact
 
-  if food.empty?
-    unobserved = squares.reject(&:observed?)
-    log "There are #{unobserved.size} never-visited squares"
-  end
+  # TODO handle no destinations case
 
   ai.my_ants.each do |ant|
     log "Where should ant at #{ant.row}, #{ant.col} go?"
@@ -46,29 +54,13 @@ ai.run do |ai|
     valid = ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
     next if valid.empty? # stay put
 
-    # TODO maybe don't use line-of-sight for these next two...
-
-    # is there any food?
-    target = food.sort_by { |uo| ant.square.distance2(uo) }.first
-    log "chasing food" if target
-
-    # is there anything unexplored?
-    if target.nil?
-      target = unobserved.sort_by { |uo| ant.square.distance2(uo) }.first
-      log "exploring" if target
-    end
-
-    # no food and whole map observed? really?
-    if target.nil?
-      target = squares.rand
-      log "nothing to do"
-    end
-
-    log "Target is #{target.row}, #{target.col}"
+    # pick a destination based on proximity and a weighting factor
+    type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square)) / weight(type) }
+    log "Destination is #{type} at #{destination.row}, #{destination.col}"
 
     # take the first step, unless it's off limits; then take a random step
     # TODO should be able to cache this route with the ant and have it remember its plan, only recompute if plan goes invalid
-    route = ant.square.route_to(target)
+    route = ant.square.route_to(destination)
     next_step = if route
                   route.first
                 else
