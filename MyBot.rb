@@ -4,7 +4,7 @@ require 'ants.rb'
 require 'set'
 
 require 'psych'
-WEIGHTS = Psych.load(File.open(ARGV[0], 'r'))
+WEIGHTS = Psych.load(File.open('weights.yml', 'r'))
 
 # higher weights mean higher priorities
 def weight(ai, type)
