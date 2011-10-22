@@ -64,6 +64,7 @@ ai.run do |ai|
     log "Target is #{target.row}, #{target.col}"
 
     # take the first step, unless it's off limits; then take a random step
+    # TODO should be able to cache this route with the ant and have it remember its plan, only recompute if plan goes invalid
     route = ant.square.route_to(target)
     next_step = if route
                   route.first
