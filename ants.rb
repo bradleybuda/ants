@@ -2,12 +2,11 @@ require 'set'
 
 LOG = false
 $last_log = Time.now.to_f
-File.delete('log') if LOG && File.exists?('log')
 def log(s)
   if LOG
     interval = ((Time.now.to_f - $last_log) * 1000).to_i
     $last_log = Time.now.to_f
-    File.open('log', 'a+') { |f| f.puts("[+#{interval}] #{s}") }
+    File.open("log.#{Process.pid}", 'a+') { |f| f.puts("[+#{interval}] #{s}") }
   end
 end
 
@@ -357,11 +356,17 @@ class AI
 
     over=false
     until over
-      over = read_turn
-      yield self
+      begin
+        GC.disable
+        over = read_turn
+        yield self
 
-      @stdout.puts 'go'
-      @stdout.flush
+        @stdout.puts 'go'
+        @stdout.flush
+      ensure
+        GC.enable
+        GC.start
+      end
     end
   end
 
