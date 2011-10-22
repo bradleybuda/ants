@@ -3,19 +3,22 @@ require 'ants.rb'
 
 require 'set'
 
+# higher weights mean higher priorities
 def weight(ai, type)
   case type
-  when :food then 1_000 * (15.0 / ai.my_ants.count)
-  when :raze then 500 * (ai.my_ants.count / 10.0)
-  when :kill then 300 * (ai.my_ants.count / 15.0)
-  when :explore then 200
-  when :random then 1
+  when :food then 1_000.0 / ai.my_ants.count
+  when :explore then 100.0
+  when :raze then 50.0 * ai.my_ants.count
+  when :kill then 20.0 * ai.my_ants.count
+  when :defend then 1.0 * ai.my_ants.count
+  when :random then 0.01
   end
 end
 
 def pick_goal(ai, destinations, ant)
   # pick a destination based on proximity and a weighting factor
-  type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square)) / weight(ai, type) }
+  # TODO maybe a maximum distance on each destination?
+  type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square).to_f) / weight(ai, type) }
   log "Goal is #{type} at #{destination.row}, #{destination.col}"
   [type, destination]
 end
@@ -37,7 +40,7 @@ def valid_goal?(goal)
   when :raze
     destination.hill && destination.hill != 0
   when :defend
-    destination.hill && destination.hill.owner == 0
+    destination.hill && destination.hill == 0
   when :kill
     destination.ant && destination.ant.enemy?
   end
@@ -72,8 +75,8 @@ ai.run do |ai|
       [:explore, square]
     elsif square.hill && square.hill != 0
       [:raze, square]
-#    elsif square.hill && square.hill.owner == 0 # have to work on defend because we can't plug our hill
-#      [:defend, square]
+    elsif square.hill && square.hill == 0
+      [:defend, square]
     elsif square.ant && square.ant.enemy?
       [:kill, square]
     end
@@ -114,7 +117,7 @@ ai.run do |ai|
     end
 
     if ant.route.nil?
-      log "Ant has no route to goal"
+      log "Ant has no route to goal - rerouting"
       ant.route = ant.square.route_to(ant.goal.last)
     end
 
@@ -130,7 +133,8 @@ ai.run do |ai|
 
     # Double-check validity of first step
     if !valid.member?(next_step)
-      log "Can't execute route, next step is invalid. Clearing route and moving randomly"
+      log "Can't execute route, next step is invalid. Clearing route and goal and moving randomly"
+      ant.goal  = nil
       ant.route = nil
       next_step = valid.rand
     end
