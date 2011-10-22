@@ -1,10 +1,13 @@
 require 'set'
 
 LOG = false
+$last_log = Time.now.to_f
 File.delete('log') if LOG && File.exists?('log')
 def log(s)
   if LOG
-    File.open('log', 'a+') { |f| f.puts("[#{Time.now.to_f}] #{s}") }
+    interval = ((Time.now.to_f - $last_log) * 1000).to_i
+    $last_log = Time.now.to_f
+    File.open('log', 'a+') { |f| f.puts("[+#{interval}] #{s}") }
   end
 end
 
@@ -73,14 +76,6 @@ class Ant
     @next_square = adjacent
     @ai.order self.square, square.direction_to(adjacent)
   end
-
-  def visible_squares
-    Square.all.find_all { |square| visible(square) }
-  end
-
-  def visible(square)
-    @square.distance2(square) < @ai.viewradius2
-  end
 end
 
 # Represent a single field of the map. These fields are either land or
@@ -111,10 +106,10 @@ class Square
     map
   end
 
-  def self.create_squares(rows, cols)
+  def self.create_squares(ai, rows, cols)
     @@index = Array.new(rows) do |row|
       Array.new(cols) do |col|
-        Square.new(row, col)
+        Square.new(ai, row, col)
       end
     end
   end
@@ -142,7 +137,8 @@ class Square
   attr_reader :row, :col
   attr_accessor :hill, :food, :ant
 
-  def initialize(row, col)
+  def initialize(ai, row, col)
+    @ai = ai
     @row = row
     @col = col
     @observed = false
@@ -173,8 +169,22 @@ class Square
     direction_to_neighbors.find { |direction, neighbor| neighbor == destination }.first
   end
 
+  def observe_visible_from_here!
+    return if @already_observed_from_here
+    visible_squares.each(&:observe!)
+    @already_observed_from_here = true
+  end
+
   def observe!
     @observed = true
+  end
+
+  def visible_squares
+    Square.all.find_all { |square| visible(square) }
+  end
+
+  def visible(square)
+    distance2(square) < @ai.viewradius2
   end
 
   def frontier?
@@ -334,7 +344,7 @@ class AI
     @stdout.puts 'go'
     @stdout.flush
 
-    Square.create_squares(@rows, @cols)
+    Square.create_squares(self, @rows, @cols)
     @did_setup=true
   end
 
@@ -409,9 +419,11 @@ class AI
 
     # reset the map data
     Square.reset!
+    log "Reset map data"
 
     # update the expected position of each ant
     Ant.advance_all!
+    log "Advanced all ant positions"
 
     @my_ants=[]
     @enemy_ants=[]
@@ -456,6 +468,8 @@ class AI
         warn "unexpected: #{rd}"
       end
     end
+
+    log "Got go! signal from game"
 
     return ret
   end

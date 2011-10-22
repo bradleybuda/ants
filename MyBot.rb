@@ -60,7 +60,8 @@ ai.run do |ai|
   budget = (ai.turntime / 1000.0) * 0.9
 
   # Update map visibility
-  ai.my_ants.each { |ant| ant.visible_squares.each { |square| square.observe! } }
+  log "Updating visible squares"
+  ai.my_ants.each { |ant| ant.square.observe_visible_from_here! }
 
   # Make a shared list of destinations used by all ants
   log "Looking for destinations"
