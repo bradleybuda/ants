@@ -40,6 +40,9 @@ ai.run do |ai|
     unobserved = Square.all.reject(&:observed?)
     target ||= unobserved.sort_by { |uo| ant.square.distance2(uo) }.first
 
+    # no food and whole map observed? really?
+    target ||= Square.all.rand
+
     # route that way by line-of-sight + jitter (to avoid getting stuck until we have real routing)
     next_step = ant.square.neighbors.reject { |sq| off_limits.member?(sq) }.sort_by { |neighbor| neighbor.distance2(target) + rand(JITTER) }.first
     off_limits.add(next_step)
