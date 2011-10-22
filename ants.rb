@@ -51,6 +51,10 @@ class Square
     @water, @food, @hill, @ant, @row, @col, @ai = water, food, hill, ant, row, col, ai
   end
 
+  def coords
+    [@row, @col]
+  end
+
   # Returns true if this square is not water. Square is passable if it's not water, it doesn't contain alive ants and it doesn't contain food.
   def land?; !@water; end
   # Returns true if this square is water.
