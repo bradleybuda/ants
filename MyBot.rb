@@ -1,22 +1,31 @@
 $:.unshift File.dirname($0)
 require 'ants.rb'
 
-ai=AI.new
+require 'set'
+VISITED_SQUARES = Set.new
+
+ai = AI.new
 
 ai.setup do |ai|
-	# your setup code here, if any
+  STDERR.puts "Mybot: Setup"
 end
 
 ai.run do |ai|
-	# your turn code here
-	
-	ai.my_ants.each do |ant|
-		# try to go north, if possible; otherwise try east, south, west.
-		[:N, :E, :S, :W].each do |dir|
-			if ant.square.neighbor(dir).land?
-				ant.order dir
-				break
-			end
-		end
-	end
+  ai.my_ants.each do |ant|
+    # mark current square visited
+    VISITED_SQUARES.add ant.square.coords
+
+    # find valid moves
+    valid = [:N, :E, :S, :W].find_all do |dir|
+      ant.square.neighbor(dir).land?
+    end
+
+    # find unexplored
+    unexplored = valid.reject do |dir|
+      coords = ant.square.neighbor(dir).coords
+      VISITED_SQUARES.include?(coords)
+    end
+
+    ant.order unexplored.first || valid.first unless valid.empty? #TODO huh?
+  end
 end
