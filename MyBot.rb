@@ -3,11 +3,11 @@ require 'ants.rb'
 
 require 'set'
 
-def weight(type)
+def weight(ai, type)
   case type
-  when :food then 800
-  when :raze then 500
-  when :kill then 250
+  when :food then 1_000 * (15.0 / ai.my_ants.count)
+  when :raze then 500 * (ai.my_ants.count / 10.0)
+  when :kill then 300 * (ai.my_ants.count / 15.0)
   when :explore then 200
   when :random then 1
   end
@@ -65,7 +65,7 @@ ai.run do |ai|
     next if valid.empty? # stay put
 
     # pick a destination based on proximity and a weighting factor
-    type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square)) / weight(type) }
+    type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square)) / weight(ai, type) }
     log "Destination is #{type} at #{destination.row}, #{destination.col}"
 
     # take the first step, unless it's off limits; then take a random step
