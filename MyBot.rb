@@ -5,8 +5,9 @@ require 'set'
 
 def weight(type)
   case type
-  when :food then 10
-  when :explore then 1
+  when :food then 1_000
+  when :explore then 100
+  when :random then 1
   end
 end
 
@@ -45,7 +46,8 @@ ai.run do |ai|
     end
   end.compact
 
-  # TODO handle no destinations case
+  # If there's absolutely nowhere to go
+  destinations = [[:random, Square.all.rand]] if destinations.empty?
 
   ai.my_ants.each do |ant|
     log "Where should ant at #{ant.row}, #{ant.col} go?"
