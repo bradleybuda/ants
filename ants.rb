@@ -305,17 +305,20 @@ class AI
   # Array of scores of players (you are player 0). Available only after game's over.
   attr_accessor :score
 
+  attr_accessor :my_ants, :my_hills, :enemy_ants
+
   # Initialize a new AI object. Arguments are streams this AI will read from and write to.
   def initialize stdin=$stdin, stdout=$stdout
     @stdin, @stdout = stdin, stdout
 
-    @map=nil
-    @turn_number=0
+    @map = nil
+    @turn_number = 0
 
-    @my_ants=[]
-    @enemy_ants=[]
+    @my_hills = []
+    @my_ants = []
+    @enemy_ants = []
 
-    @did_setup=false
+    @did_setup = false
   end
 
   # Returns a read-only hash of all settings.
@@ -425,8 +428,9 @@ class AI
     Ant.advance_all!
     log "Advanced all ant positions"
 
-    @my_ants=[]
-    @enemy_ants=[]
+    @my_hils = []
+    @my_ants = []
+    @enemy_ants = []
 
     until((rd=@stdin.gets.strip)=='go')
       _, type, row, col, owner = *rd.match(/(w|f|h|a|d) (\d+) (\d+)(?: (\d+)|)/)
@@ -443,6 +447,7 @@ class AI
         square.food = true
       when 'h'
         square.hill = owner
+        my_hills.push square if owner == 0
       when 'a', 'd'
         alive = (type == 'a')
 
@@ -492,14 +497,6 @@ class AI
       @stdout.puts "o #{row} #{col} #{direction.to_s.upcase}"
     end
   end
-
-
-
-
-  # Returns an array of your alive ants on the gamefield.
-  def my_ants; @my_ants; end
-  # Returns an array of alive enemy ants on the gamefield.
-  def enemy_ants; @enemy_ants; end
 
   # If row or col are greater than or equal map width/height, makes them fit the map.
   #

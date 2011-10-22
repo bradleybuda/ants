@@ -85,6 +85,7 @@ ai.run do |ai|
   # Pessimistically assume ants are staying put, but remove from this list if they move
   off_limits = Set.new
   ai.my_ants.each { |ant| off_limits.add(ant.square) }
+  ai.my_hills.each { |square| off_limits.add(square) }
 
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
@@ -135,7 +136,7 @@ ai.run do |ai|
     end
 
     log "Moving to #{next_step.row}, #{next_step.col}"
-    off_limits.delete(ant.square)
+    off_limits.delete(ant.square) unless ant.square.hill == 0
     off_limits.add(next_step)
     ant.order_to next_step
   end
