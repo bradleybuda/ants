@@ -4,7 +4,7 @@ LOG = false
 File.delete('log') if LOG && File.exists?('log')
 def log(s)
   if LOG
-    File.open('log', 'a+') { |f| f.puts(s) }
+    File.open('log', 'a+') { |f| f.puts("[#{Time.now.to_f}] #{s}") }
   end
 end
 
@@ -17,8 +17,9 @@ class Ant
   attr_accessor :owner, :id
   # Square this ant sits on.
   attr_accessor :square, :next_square
-
   attr_accessor :alive, :ai
+  attr_accessor :goal
+  attr_accessor :route
 
   def initialize(alive, owner, square, ai)
     @alive, @owner, @square, @ai = alive, owner, square, ai
@@ -86,6 +87,29 @@ end
 # unknown - once a square is observed as water, it is deleted
 class Square
   @@index = nil
+
+  def self.dump_map(from, to)
+    map = ""
+    @@index.each do |row|
+      row.each do |square|
+        c = if square.nil?
+              'X'
+            elsif square == from
+              '*'
+            elsif square == to
+              '$'
+            elsif square.observed?
+              '_'
+            else
+              ' '
+            end
+        map += c
+      end
+      map += "\n"
+    end
+
+    map
+  end
 
   def self.create_squares(rows, cols)
     @@index = Array.new(rows) do |row|
