@@ -56,6 +56,9 @@ ai.setup do |ai|
 end
 
 ai.run do |ai|
+  start_time = Time.now.to_f
+  budget = (ai.turntime / 1000.0) * 0.9
+
   # Update map visibility
   ai.my_ants.each { |ant| ant.visible_squares.each { |square| square.observe! } }
 
@@ -83,12 +86,10 @@ ai.run do |ai|
   ai.my_ants.each { |ant| off_limits.add(ant.square) }
 
   # Make a queue of ants to move
-  ants_to_move = ai.my_ants
+  # Ideally, this might be a priority queue based on each ant's goal value
+  ants_to_move = ai.my_ants.shuffle # jitter the move order so if we're running out of time, we don't always get the same ants stuck
 
-  start_time = Time.now.to_f
-  threshold = 0.200 # TODO get from game parameters
-
-  until ants_to_move.empty? || ((Time.now.to_f - start_time) > threshold) do
+  until ants_to_move.empty? || ((Time.now.to_f - start_time) > budget) do
     ant = ants_to_move.shift
     log "Next ant in queue is #{ant.id}. After this we have #{ants_to_move.map(&:id)} to move."
 
