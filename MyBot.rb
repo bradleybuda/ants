@@ -3,15 +3,18 @@ require 'ants.rb'
 
 require 'set'
 
+require 'psych'
+WEIGHTS = Psych.load(File.open(ARGV[0], 'r'))
+
 # higher weights mean higher priorities
 def weight(ai, type)
   case type
-  when :food then 1_000.0 / ai.my_ants.count
-  when :explore then 300.0
-  when :raze then 100.0 * ai.my_ants.count
-  when :kill then 20.0 * ai.my_ants.count
-  when :defend then 0.1 * ai.my_ants.count
-  when :random then 0.01
+  when :food then WEIGHTS['food'] / ai.my_ants.count
+  when :explore then WEIGHTS['explore'] / ai.my_ants.count
+  when :raze then WEIGHTS['raze'] * ai.my_ants.count
+  when :kill then WEIGHTS['kill'] * ai.my_ants.count
+  when :defend then WEIGHTS['defend'] * ai.my_ants.count
+  when :random then 1.0
   end
 end
 
