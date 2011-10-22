@@ -1,3 +1,11 @@
+require 'set'
+
+
+#File.delete('log')
+def log(s)
+  #File.open('log', 'a+') { |f| f.puts(s) }
+end
+
 # Represents a single ant.
 class Ant
   # Owner of this ant. If it's 0, it's your ant.
@@ -142,6 +150,67 @@ class Square
     (dr**2 + dc**2)
   end
 
+  # A* from http://en.wikipedia.org/wiki/A*
+  def route_to(goal)
+    log "looking for route from #{self.row}, #{self.col} to #{goal.row}, #{goal.col}"
+
+    closed_set = Set.new
+    open_set = Set.new([self])
+    came_from = {}
+
+    g_score = {self => 0}
+    h_score = {self => Math.sqrt(self.distance2(goal))}
+    f_score = {self => g_score[self] + h_score[self]}
+
+    until open_set.empty? do
+      x = open_set.sort_by { |o| f_score[o] }.first
+      log "trying #{x.row}, #{x.col}"
+
+      if x == goal
+        path = reconstruct_path(came_from, goal)
+        path.shift
+        log "found path #{path.map { |s| [s.row, s.col] }}"
+        return path
+      end
+
+      open_set.delete(x)
+      closed_set.add(x)
+
+      log "neighbors are #{x.neighbors.map { |s| [s.row, s.col] }}"
+      x.neighbors.each do |y|
+        next if closed_set.member?(y)
+
+        tentative_g_score = g_score[x] + 1
+        tentative_is_better = nil
+        if !open_set.member?(y)
+          open_set.add(y)
+          tentative_is_better = true
+        elsif tentative_g_score < g_score[y]
+          tentative_is_better = true
+        else
+          tentative_is_better = false
+        end
+
+        if tentative_is_better
+          came_from[y] = x
+          g_score[y] = tentative_g_score
+          h_score[y] = Math.sqrt(y.distance2(goal))
+          f_score[y] = g_score[y] + h_score[y]
+        end
+      end
+    end
+
+    return nil # this should not ever happen, but it seems to occur with the test data
+  end
+
+  def reconstruct_path(came_from, current_node)
+    if came_from[current_node]
+      reconstruct_path(came_from, came_from[current_node]) + [current_node]
+    else
+      [current_node]
+    end
+  end
+
   def reset!
     @food = @hill = false
     @ant = nil
@@ -244,9 +313,9 @@ class AI
       end
     end
 
-    STDERR.puts "loadtime: #{@loadtime}"
-    STDERR.puts "rows: #{@rows}"
-    STDERR.puts "cols: #{@cols}"
+    ##log "loadtime: #{@loadtime}"
+    ##log "rows: #{@rows}"
+    ##log "cols: #{@cols}"
 
     @viewradius=Math.sqrt @viewradius2
     @attackradius=Math.sqrt @attackradius2
@@ -292,6 +361,7 @@ class AI
       when 'w'
         square.destroy!
       when 'f'
+        log "food at #{square.row}, #{square.col}"
         square.food = true
       when 'h'
         square.hill = owner
