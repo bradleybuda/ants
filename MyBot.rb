@@ -62,7 +62,10 @@ ai.run do |ai|
 
     # make sure we're not stuck
     valid = ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
-    next if valid.empty? # stay put
+    if valid.empty?
+      log "This ant is stuck, staying put"
+      next
+    end
 
     # pick a destination based on proximity and a weighting factor
     type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square)) / weight(ai, type) }
@@ -78,7 +81,8 @@ ai.run do |ai|
                 end
     next_step = valid.rand unless valid.member?(next_step)
 
+    log "Moving to #{next_step.row}, #{next_step.col}"
     off_limits.add(next_step)
-    ant.order ant.square.direction_to(next_step)
+    ant.order_to next_step
   end
 end

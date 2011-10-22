@@ -1,22 +1,55 @@
 require 'set'
 
-
-#File.delete('log')
+LOG = false
+File.delete('log') if LOG && File.exists?('log')
 def log(s)
-  #File.open('log', 'a+') { |f| f.puts(s) }
+  if LOG
+    File.open('log', 'a+') { |f| f.puts(s) }
+  end
 end
 
 # Represents a single ant.
 class Ant
+  @@my_living_ants = {}
+  @@next_ant_id = 0
+
   # Owner of this ant. If it's 0, it's your ant.
-  attr_accessor :owner
+  attr_accessor :owner, :id
   # Square this ant sits on.
-  attr_accessor :square
+  attr_accessor :square, :next_square
 
   attr_accessor :alive, :ai
 
-  def initialize alive, owner, square, ai
+  def initialize(alive, owner, square, ai)
     @alive, @owner, @square, @ai = alive, owner, square, ai
+
+    if @owner == 0
+      # assign an ID
+      @id = @@next_ant_id
+      @@next_ant_id += 1
+
+      # keep track of current and next locations
+      @@my_living_ants[@square] = self
+      @next_square = @square
+    end
+  end
+
+  def self.at(square)
+    @@my_living_ants[square]
+  end
+
+  def self.advance_all!
+    last_locations = @@my_living_ants
+    @@my_living_ants = {}
+    last_locations.values.each do |ant|
+      next if ant.dead?
+
+      @@my_living_ants[ant.next_square] = ant
+
+      # update current and next squares
+      ant.square = ant.next_square
+      ant.next_square = ant.square
+    end
   end
 
   # True if ant is alive.
@@ -34,9 +67,10 @@ class Ant
   # Returns the column of square this ant is standing at.
   def col; @square.col; end
 
-  # Order this ant to go in given direction. Equivalent to ai.order ant, direction.
-  def order direction
-    @ai.order self, direction
+  # Order this ant to go to a given *adjacent* square and note the next expected position.
+  def order_to(adjacent)
+    @next_square = adjacent
+    @ai.order self.square, square.direction_to(adjacent)
   end
 
   def visible_squares
@@ -164,7 +198,7 @@ class Square
 
     until open_set.empty? do
       x = open_set.sort_by { |o| f_score[o] }.first
-      log "trying #{x.row}, #{x.col}"
+#      log "trying #{x.row}, #{x.col}"
 
       if x == goal
         path = reconstruct_path(came_from, goal)
@@ -176,7 +210,7 @@ class Square
       open_set.delete(x)
       closed_set.add(x)
 
-      log "neighbors are #{x.neighbors.map { |s| [s.row, s.col] }}"
+#      log "neighbors are #{x.neighbors.map { |s| [s.row, s.col] }}"
       x.neighbors.each do |y|
         next if closed_set.member?(y)
 
@@ -342,10 +376,14 @@ class AI
     else
       _, num = *rd.match(/\Aturn (\d+)\Z/)
       @turn_number=num.to_i
+      log "Starting turn #{@turn_number}"
     end
 
     # reset the map data
     Square.reset!
+
+    # update the expected position of each ant
+    Ant.advance_all!
 
     @my_ants=[]
     @enemy_ants=[]
@@ -365,18 +403,25 @@ class AI
         square.food = true
       when 'h'
         square.hill = owner
-      when 'a'
-        a=Ant.new true, owner, Square.at(row, col), self
-        square.ant = a
+      when 'a', 'd'
+        alive = (type == 'a')
 
-        if owner==0
-          my_ants.push a
+        if owner == 0
+          ant = Ant.at(square)
+          if ant.nil?
+            log "no record of my ant at #{square.row}, #{square.col} - newly born? or did we lose him?"
+            ant = Ant.new(alive, 0, square, self)
+            log "new ant has id #{ant.id}"
+          else
+            log "rediscovered ant #{ant.id} at #{square.row}, #{square.col}"
+          end
+
+          my_ants.push ant
         else
-          enemy_ants.push a
+          # we don't try to remember enemy ants
+          ant = Ant.new(alive, owner, square, self)
+          enemy_ants.push ant
         end
-      when 'd'
-        d=Ant.new false, owner, Square.at(row, col), self
-        square.ant = d
       when 'r'
         # pass
       else
@@ -397,9 +442,11 @@ class AI
   def order a, b, c=nil
     if !c # assume two-argument form: ant, direction
       ant, direction = a, b
+      log "Moving #{direction}"
       @stdout.puts "o #{ant.row} #{ant.col} #{direction.to_s.upcase}"
     else # assume three-argument form: row, col, direction
       col, row, direction = a, b, c
+      log "Moving #{direction}"
       @stdout.puts "o #{row} #{col} #{direction.to_s.upcase}"
     end
   end
