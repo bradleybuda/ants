@@ -56,20 +56,10 @@ ai.setup do |ai|
 end
 
 ai.run do |ai|
-  # Update map and off_limits based on ant positions
-  off_limits = Set.new
-  ai.my_ants.each do |ant|
-    # don't move to a square that an ant is already on because:
-    #
-    # 1) it's not interesting
-    # 2) he might be stuck, in which case this is suicide
-    off_limits.add(ant.square)
+  # Update map visibility
+  ai.my_ants.each { |ant| ant.visible_squares.each { |square| square.observe! } }
 
-    # note the presence of any non-water squares
-    ant.visible_squares.each { |square| square.observe! }
-  end
-
-  # These lists are useful to all ants - all
+  # Make a shared list of destinations used by all ants
   log "Looking for destinations"
   destinations = Square.all.map do |square|
     if square.has_food?
@@ -84,16 +74,29 @@ ai.run do |ai|
       [:kill, square]
     end
   end.compact
+  destinations = [[:random, Square.all.rand]] if destinations.empty? # If there's absolutely nowhere to go
   log "Found #{destinations.size} possible destinations"
 
-  # If there's absolutely nowhere to go
-  destinations = [[:random, Square.all.rand]] if destinations.empty?
+  # Keep track of ant positions
+  # Pessimistically assume ants are staying put, but remove from this list if they move
+  off_limits = Set.new
+  ai.my_ants.each { |ant| off_limits.add(ant.square) }
 
-  ai.my_ants.each do |ant|
-    # make sure we're not stuck
+  # Make a queue of ants to move
+  ants_to_move = ai.my_ants
+
+  start_time = Time.now.to_f
+  threshold = 0.200 # TODO get from game parameters
+
+  until ants_to_move.empty? || ((Time.now.to_f - start_time) > threshold) do
+    ant = ants_to_move.shift
+    log "Next ant in queue is #{ant.id}. After this we have #{ants_to_move.map(&:id)} to move."
+
+    # delay orders if we're stuck
     valid = ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) }
     if valid.empty?
-      log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck, staying put"
+      log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck, delaying orders"
+      ants_to_move.push(ant)
       next
     end
 
@@ -130,6 +133,7 @@ ai.run do |ai|
     end
 
     log "Moving to #{next_step.row}, #{next_step.col}"
+    off_limits.delete(ant.square)
     off_limits.add(next_step)
     ant.order_to next_step
   end
