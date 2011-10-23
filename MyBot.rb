@@ -5,16 +5,17 @@ require 'set'
 
 require 'psych'
 WEIGHTS = Psych.load(File.open('weights.yml', 'r'))
-LOOK_THRESHOLD = 150 # tune me; might need to depend on map size
+LOOK_THRESHOLD = 200 # TODO tune me; might need to depend on map size
 
 # higher weights mean higher priorities
 def weight(ai, type)
   case type
   when :food then WEIGHTS['food'] / ai.my_ants.count
-  when :explore then WEIGHTS['explore'] / ai.my_ants.count
   when :raze then WEIGHTS['raze'] * ai.my_ants.count
   when :kill then WEIGHTS['kill'] * ai.my_ants.count
   when :defend then WEIGHTS['defend'] * ai.my_ants.count
+  when :explore then WEIGHTS['explore']
+  when :chase then WEIGHTS['chase'] # TODO this would be better as "escort"
   when :random then 1.0
   end
 end
@@ -46,9 +47,11 @@ def valid_goal?(goal)
   when :raze
     destination.hill && destination.hill != 0
   when :defend
-    destination.hill && destination.hill == 0
+    destination.neighbors.any? { |neighbor| neighbor.hill && neighbor.hill == 0 }
   when :kill
     destination.ant && destination.ant.enemy?
+  when :chase
+    false # chase missions only last one turn
   end
 end
 
@@ -81,14 +84,14 @@ ai.run do |ai|
       [:explore, square]
     elsif square.hill && square.hill != 0
       [:raze, square]
-    elsif square.hill && square.hill == 0
+    elsif square.neighbors.any? { |neighbor| neighbor.hill && neighbor.hill == 0 }
       [:defend, square]
     elsif square.ant && square.ant.enemy?
       [:kill, square]
     end
   end.compact
   destinations = [[:random, Square.all.rand]] if destinations.empty? # If there's absolutely nowhere to go
-  log "Found #{destinations.size} possible destinations"
+  log "Found #{destinations.size} initial destinations"
 
   # Keep track of ant positions
   # Pessimistically assume ants are staying put, but remove from this list if they move
@@ -137,6 +140,12 @@ ai.run do |ai|
     # take the first step, unless it's off limits; then take a random step
     # TODO should be able to cache this route with the ant and have it remember its plan, only recompute if plan goes invalid
     next_step = if ant.route
+                  # Ant has a valid goal and route - make it chaseable (if it's not chasing)
+                  if ant.goal.first != :chase && ant.goal.first != :defend
+                    log "Adding #{ant.id} as a chase target"
+                    destinations << [:chase, ant.square]
+                  end
+
                   ant.route.shift
                 else
                   # This shouldn't happen (except in the test cases)

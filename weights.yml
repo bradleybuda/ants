@@ -1,5 +1,6 @@
 food: 2000.0
-explore: 200.0
-raze: 30.0
+explore: 300.0
+raze: 50.0
 kill: 10.0
-defend: 0.1
+defend: 0.02
+chase: 10.0
