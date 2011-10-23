@@ -23,12 +23,9 @@ class Destination
   end
 
   def next_square(square, valid_squares)
-    route = square.route_to(@square)
-    (route.nil? || route.empty?) ? square : route.first
+    # this is horribly slow...
+    valid_squares.min_by { |vs| route = vs.route_to(@square); route.nil? ? 1_000_000 : route.length }
   end
-end
-
-class OwnHill < Destination
 end
 
 # concrete goals
@@ -121,14 +118,19 @@ end
 class Plug < Destination
   @@plug_active = false
 
-  def enable!
+  def self.enable!
     @@plug_active = true
   end
 
-  def disable!
+  def self.disable!
     @@plug_active = false
   end
 
+  def self.active?
+    @@plug_active
+  end
+
+  # TODO only one ant should attempt to execute the plug goal
   def self.all
     if @@plug_active
       Square.all.find_all { |square| square.hill && square.hill == 0 }.map { |square| Plug.new(square) }

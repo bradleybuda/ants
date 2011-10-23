@@ -10,11 +10,6 @@ module Enumerable
   end
 end
 
-# Once this is set, it will be maintained for the rest of the
-# game. That wasn't my original intention, but it seems to work pretty
-# well.
-avoid_growth = false
-
 ai = AI.new
 
 ai.setup do |ai|
@@ -38,7 +33,7 @@ ai.run do |ai|
   # Pessimistically assume ants are staying put, but remove from this list if they move
   off_limits = Set.new
   ai.my_ants.each { |ant| off_limits.add(ant.square) }
-  ai.my_hills.each { |square| off_limits.add(square) } unless avoid_growth
+  ai.my_hills.each { |square| off_limits.add(square) } unless Plug.active?
 
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
@@ -51,7 +46,7 @@ ai.run do |ai|
     log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
     if remaining_budget <= 0
       log "Out of time, aborting with #{ants_to_move.size} unmoved ants. Will avoid spawning new ants."
-      avoid_growth = true
+      Plug.enable! # TODO disable plug goal if time goes back down
       break
     end
 
