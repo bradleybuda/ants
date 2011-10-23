@@ -22,16 +22,13 @@ class Destination
     square.distance2(@square)
   end
 
-  def next_square(square)
+  def next_square(square, valid_squares)
     route = square.route_to(@square)
     (route.nil? || route.empty?) ? square : route.first
   end
 end
 
 class OwnHill < Destination
-  def valid?
-    super && @square.hill && @square.hill == 0
-  end
 end
 
 # concrete goals
@@ -92,22 +89,36 @@ class Kill < Destination
   end
 end
 
-class Defend < OwnHill
+class Defend < Destination
   def self.all
-    Square.all.find_all do |square|
-      square.neighbors.any? do |neighbor|
-        neighbor.hill && neighbor.hill == 0
+    results = []
+
+    Square.all.each do |square|
+      if square.hill && square.hill == 0
+        square.neighbors.each do |neighbor|
+          results << Defend.new(neighbor, square)
+        end
       end
-    end.map { |square| Defend.new(square) }
+    end
+
+    results
+  end
+
+  def initialize(square, hill_square)
+    super(square)
+    @hill_square = hill_square
+  end
+
+  def valid?
+    @hill_square.hill && @hill_square.hill == 0
   end
 
   def to_s
-    # TODO which hill?
-    "<Goal: defend own hill near #{@square}>"
+    "<Goal: defend #{@hill_square} from #{@square}>"
   end
 end
 
-class Plug < OwnHill
+class Plug < Destination
   @@plug_active = false
 
   def enable!
@@ -127,7 +138,7 @@ class Plug < OwnHill
   end
 
   def valid?
-    @@plug_active && super
+    @@plug_active && @square.hill && @square.hill == 0
   end
 
   def to_s
@@ -154,6 +165,8 @@ class Escort
   def to_s
     "<Goal: escort #{@ant}>"
   end
+
+  # TODO implement next_square
 end
 
 class Wander
@@ -169,6 +182,12 @@ class Wander
 
   def distance2(square)
     0.1 # wander is always nearby but non-zero
+  end
+
+  def next_square(square, valid_squares)
+    # give wander a bias toward open space
+    # not sure if this is a good policy or not
+    valid_squares.max_by { |square| square.neighbors.count }
   end
 
   def to_s

@@ -1,8 +1,8 @@
 eat: 2000.0
 raze: 50.0
 kill: 10.0
-defend: 0.02
+defend: 0.01
 explore: 300.0
-chase: 10.0
+escort: 10.0
 plug: 1000.0
-wander: 0.01
+wander: 1.0
