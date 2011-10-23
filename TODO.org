@@ -28,4 +28,4 @@ can we use this same logic for hunting enemies?
 would it be so hard to make them move 1x2 or 2x2?
 
 * TODO evolve on different map types and player counts
-
+* TODO GA algorithm doesn't seem to actually work
