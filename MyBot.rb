@@ -78,6 +78,9 @@ ai.run do |ai|
       log "#{ant} will continue with #{ant.goal}"
     end
 
+    # TODO some goals never or almost expire (defend, escort, wander)
+    # - time them out eventually so ants can reconsider
+
     # As of now, +next_square+ isn't *required* to use the valid list,
     # it's just a hint. It's still the caller's job to ensure valid
     # moves are made

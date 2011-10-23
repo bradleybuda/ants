@@ -19,10 +19,12 @@ class Destination
   end
 
   def distance2(square)
-    square.distance2(@square)
+    square.distance2(@square) + 0.1 # prevent zero distance, which can cause ants to get stuck
   end
 
   def next_square(square, valid_squares)
+    return nil if square == @square # arrived
+
     # this is horribly slow...
     valid_squares.min_by { |vs| route = vs.route_to(@square); route.nil? ? 1_000_000 : route.length }
   end
@@ -107,7 +109,8 @@ class Defend < Destination
   end
 
   def valid?
-    @hill_square.hill && @hill_square.hill == 0
+    # TODO invalid if another ant is on the spot
+    @hill_square.hill && @hill_square.hill == 0 && rand > 0.2 # don't defend too long
   end
 
   def to_s
@@ -140,6 +143,7 @@ class Plug < Destination
   end
 
   def valid?
+    # TODO invalid if another ant is on the spot
     @@plug_active && @square.hill && @square.hill == 0
   end
 
@@ -169,13 +173,15 @@ class Escort
   end
 
   def next_square(square, valid_squares)
+    return nil if square == @ant.square
+
     # TODO factor out w/ Destination - this is very similar but a moving target
     # can't cache routes b/c target moves
     valid_squares.min_by { |vs| route = vs.route_to(@ant.square); route.nil? ? 1_000_000 : route.length }
   end
 
   def to_s
-    "<Goal: escort #{@ant}>"
+    "<Goal: escort #{@ant} executing #{@ant.goal}>"
   end
 end
 
@@ -187,7 +193,7 @@ class Wander
   end
 
   def valid?
-    true
+    rand > 0.5 # don't wander too long
   end
 
   def distance2(square)
