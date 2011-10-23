@@ -242,7 +242,7 @@ class Goal
     when Kill then WEIGHTS['kill'] * ai.my_ants.count
     when Defend then WEIGHTS['defend'] * ai.my_ants.count
     when Explore then WEIGHTS['explore']
-    when Escort then WEIGHTS['escort']
+    when Escort then WEIGHTS['escort'] * ai.my_ants.count
     when Plug then WEIGHTS['plug']
     when Wander then WEIGHTS['wander']
     end
