@@ -1,6 +1,6 @@
 require 'set'
 
-LOG = false
+LOG = true
 $last_log = Time.now.to_f
 def log(s)
   if LOG
@@ -142,6 +142,7 @@ class Square
     @row = row
     @col = col
     @observed = false
+    @already_observed_from_here = false
   end
 
   def neighbors
@@ -170,9 +171,15 @@ class Square
   end
 
   def observe_visible_from_here!
-    return if @already_observed_from_here
-    visible_squares.each(&:observe!)
+    return 0 if @already_observed_from_here == true
+    vis = visible_squares.reject(&:observed?)
+    vis.each(&:observe!)
     @already_observed_from_here = true
+    return vis.size
+  end
+
+  def observed?
+    @observed
   end
 
   def observe!
@@ -180,7 +187,7 @@ class Square
   end
 
   def visible_squares
-    Square.all.find_all { |square| visible(square) }
+    @_visibles_squares ||= Square.all.find_all { |square| visible(square) }
   end
 
   def visible(square)
@@ -189,10 +196,6 @@ class Square
 
   def frontier?
     !observed? && neighbors.any?(&:observed?)
-  end
-
-  def observed?
-    @observed
   end
 
   def has_food?

@@ -6,7 +6,7 @@ require 'set'
 require 'psych'
 WEIGHTS_FILE = ARGV[0] || 'weights.yml'
 WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
-LOOK_THRESHOLD = 300
+LOOK_THRESHOLD = 100
 
 # higher weights mean higher priorities
 def weight(ai, type)
@@ -77,8 +77,9 @@ ai.run do |ai|
   budget = (ai.turntime / 1000.0) * 0.8 # wish this didn't have to be so conservative...
 
   # Update map visibility
-  log "Updating visible squares"
-  ai.my_ants.each { |ant| ant.square.observe_visible_from_here! }
+  log "Updating visible squares for #{ai.my_ants.count} ants"
+  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.observe_visible_from_here! }
+  log "Updated visibility of #{updated} squares"
 
   # Make a shared list of destinations used by all ants
   log "Looking for destinations"
@@ -154,7 +155,8 @@ ai.run do |ai|
     # TODO should be able to cache this route with the ant and have it remember its plan, only recompute if plan goes invalid
     next_step = if ant.route
                   # Ant has a valid goal and route - make it chaseable (if it's not chasing)
-                  if ant.goal.first != :chase && ant.goal.first != :defend
+                  goal_type = ant.goal.first
+                  if goal_type != :chase && goal_type != :defend && goal_type != :random
                     log "Adding #{ant.id} as a chase target"
                     destinations << [:chase, ant.square]
                   end
