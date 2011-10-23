@@ -16,8 +16,11 @@ ai.setup do |ai|
   log "Mybot: Setup"
 end
 
+# wish this didn't have to be so conservative...
+TIMEOUT_FUDGE = 0.5
+
 ai.run do |ai|
-  budget = (ai.turntime / 1000.0) * 0.8 # wish this didn't have to be so conservative...
+  budget = (ai.turntime / 1000.0) * TIMEOUT_FUDGE
 
   # Update map visibility
   log "Updating visible squares for #{ai.my_ants.count} ants"
@@ -52,7 +55,7 @@ ai.run do |ai|
     log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
     if remaining_budget <= 0
       log "Out of time, aborting with #{ants_to_move.size} unmoved ants. Will avoid spawning new ants."
-      Plug.enable! # TODO disable plug goal if time goes back down
+      Plug.enable!
       break
     end
 
@@ -105,4 +108,6 @@ ai.run do |ai|
       end
     end
   end
+
+  Plug.disable! # all ants moved within time budget, so allow spawning again
 end

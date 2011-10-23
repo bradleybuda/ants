@@ -26,8 +26,10 @@ class Destination
   def next_square(ant, valid_squares)
     return nil if ant.square == @square # arrived
 
-    if (!@route_cache[ant] || !valid_squares.member?(@route_cache[ant].first))
-      # we either don't have a route, or it's blocked, so reroute
+    if (!@route_cache[ant] || !valid_squares.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
+      log "Generating new route for #{ant} to #{@square} (cache missing or invalid)"
+
+      # we don't have a route, or we can't use it any more
       routes = valid_squares.map do |vs|
         route = vs.route_to(@square)
         route.nil? ? nil : [vs] + route
@@ -41,6 +43,10 @@ class Destination
     end
 
     @route_cache[ant].shift
+  end
+
+  def has_water?(route)
+    route.any? { |square| Square.at(square.row, square.col).nil? }
   end
 end
 
@@ -226,7 +232,7 @@ end
 # Manager class
 
 class Goal
-  NEARBY_THRESHOLD = 2_000
+  NEARBY_THRESHOLD = 1_000
   CONCRETE_GOALS = [Eat, Raze, Kill, Defend, Explore, Escort, Plug, Wander]
 
   def self.all
