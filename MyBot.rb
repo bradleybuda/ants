@@ -87,7 +87,7 @@ ai.run do |ai|
     # As of now, +next_square+ isn't *required* to use the valid list,
     # it's just a hint. It's still the caller's job to ensure valid
     # moves are made
-    next_square = ant.goal.next_square(ant.square, valid)
+    next_square = ant.goal.next_square(ant, valid)
     if next_square == ant.square
       log "#{ant} will stay put to execute #{ant.goal}"
     elsif valid.member?(next_square)

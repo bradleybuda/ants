@@ -12,6 +12,7 @@ WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
 class Destination
   def initialize(square)
     @square = square
+    @route_cache = {} # ant => route
   end
 
   def valid?
@@ -22,11 +23,24 @@ class Destination
     square.distance2(@square) + 0.1 # prevent zero distance, which can cause ants to get stuck
   end
 
-  def next_square(square, valid_squares)
-    return nil if square == @square # arrived
+  def next_square(ant, valid_squares)
+    return nil if ant.square == @square # arrived
 
-    # this is horribly slow...
-    valid_squares.min_by { |vs| route = vs.route_to(@square); route.nil? ? 1_000_000 : route.length }
+    if (!@route_cache[ant] || !valid_squares.member?(@route_cache[ant].first))
+      # we either don't have a route, or it's blocked, so reroute
+      routes = valid_squares.map do |vs|
+        route = vs.route_to(@square)
+        route.nil? ? nil : [vs] + route
+      end.compact
+
+      if routes.empty?
+        log "No route to destination"
+        return nil
+      end
+      @route_cache[ant] = routes.min_by(&:length)
+    end
+
+    @route_cache[ant].shift
   end
 end
 
@@ -172,9 +186,7 @@ class Escort
     @ant.square.distance2(square)
   end
 
-  def next_square(square, valid_squares)
-    return nil if square == @ant.square
-
+  def next_square(ant, valid_squares)
     # TODO factor out w/ Destination - this is very similar but a moving target
     # can't cache routes b/c target moves
     valid_squares.min_by { |vs| route = vs.route_to(@ant.square); route.nil? ? 1_000_000 : route.length }
@@ -200,7 +212,7 @@ class Wander
     0.1 # wander is always nearby but non-zero
   end
 
-  def next_square(square, valid_squares)
+  def next_square(ant, valid_squares)
     # give wander a bias toward open space
     # not sure if this is a good policy or not
     valid_squares.max_by { |square| square.neighbors.count }
