@@ -70,6 +70,9 @@ module Enumerable
   end
 end
 
+# Once this is set, it will be maintained for the rest of the
+# game. That wasn't my original intention, but it seems to work pretty
+# well.
 avoid_growth = false
 
 ai = AI.new
