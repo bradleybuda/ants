@@ -6,7 +6,7 @@ require 'set'
 require 'psych'
 WEIGHTS_FILE = ARGV[0] || 'weights.yml'
 WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
-LOOK_THRESHOLD = 200 # TODO tune me; might need to depend on map size
+LOOK_THRESHOLD = 300
 
 # higher weights mean higher priorities
 def weight(ai, type)
@@ -24,7 +24,12 @@ end
 def pick_goal(ai, destinations, ant)
   # pick a destination based on proximity and a weighting factor
   nearby_destinations = destinations.find_all { |_, square| ant.square.distance2(square) < LOOK_THRESHOLD }
-  candidates = nearby_destinations.empty? ? destinations : nearby_destinations
+  candidates = if nearby_destinations.empty?
+                 log "No nearby destinations, will make a random move"
+                 ant.neighbors.map { |neighbor| [:random, neighbor] }
+               else
+                 nearby_destinations
+               end
 
   type, destination = candidates.min_by { |type, square| Math.sqrt(ant.square.distance2(square).to_f) / weight(ai, type) }
   log "Goal is #{type} at #{destination.row}, #{destination.col}"
@@ -69,8 +74,7 @@ ai.setup do |ai|
 end
 
 ai.run do |ai|
-  start_time = Time.now.to_f
-  budget = (ai.turntime / 1000.0) * 0.9
+  budget = (ai.turntime / 1000.0) * 0.8 # wish this didn't have to be so conservative...
 
   # Update map visibility
   log "Updating visible squares"
@@ -105,9 +109,17 @@ ai.run do |ai|
   ants_to_move = ai.my_ants.shuffle # jitter the move order so if we're running out of time, we don't always get the same ants stuck
   stuck_once = Set.new
 
-  until ants_to_move.empty? || ((Time.now.to_f - start_time) > budget) do
+  until ants_to_move.empty? do
+    elapsed_time = Time.now.to_f - ai.start_time
+    remaining_budget = budget - elapsed_time
+    log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
+    if remaining_budget <= 0
+      log "Out of time, aborting with #{ants_to_move.size} unmoved ants"
+      break
+    end
+
     ant = ants_to_move.shift
-    log "Next ant in queue is #{ant.id}. After this we have #{ants_to_move.map(&:id)} to move."
+    log "Next ant in queue is #{ant.id}. After this we have #{ants_to_move.size} to move."
 
     # delay orders if we're stuck
     valid = Set.new(ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) })

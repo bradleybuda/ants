@@ -306,6 +306,8 @@ class AI
 
   attr_accessor :my_ants, :my_hills, :enemy_ants
 
+  attr_reader :start_time
+
   # Initialize a new AI object. Arguments are streams this AI will read from and write to.
   def initialize stdin=$stdin, stdout=$stdout
     @stdin, @stdout = stdin, stdout
@@ -358,6 +360,7 @@ class AI
     until over
       begin
         GC.disable
+        @start_time = Time.now.to_f
         over = read_turn
         yield self
 
