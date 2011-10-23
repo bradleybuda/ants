@@ -1,0 +1,31 @@
+* TODO make it faster
+* TODO vector of environment statistics
+** water / total space
+** observed sq / total space
+** unobserved sq / total space
+** food / observed sq
+** my ants / observed sq
+** enemy ants / observed sq
+** my hills / observed sq
+** enemy hills / observed sq
+* TODO weighting matrix - linear eq. to transform stats to goal weights
+* TODO defenders can stay put (but don't block spawners)
+* TODO "plug own hill" goal? (want to eat food to prevent enemies but don't want too many ants)
+* TODO reexpore goal - go back to squares we haven't seen in a while
+* TODO replace chase goal with escort goal - more sophisticated tracking, reacquire moving target
+can we use this same logic for hunting enemies?
+* TODO avenge goal - head to dead ally
+* TODO overrun goal - head to dead enemy
+* TODO limit goal pursuit time - cache only a partial route then reacquire goal
+* TODO simplify goal / route code - too many interdependencies
+* TODO priority queue for ant movement - ants with most important / nearest goals get to go first in case we timeout
+* TODO more aggressive local timeout - don't let the server time us out
+* TODO index square types for destination generation
+* TODO limit number of ants that can pursue a goal? i.e. don't have everyone chase the same food
+* TODO cache long-lived routes? i.e. route to enemy hill
+* TODO invalidate routes when water is revealed on route square
+* TODO ants move as groups / formations
+would it be so hard to make them move 1x2 or 2x2?
+
+* TODO evolve on different map types and player counts
+
