@@ -25,6 +25,7 @@ ai.run do |ai|
   log "Updated visibility of #{updated} squares"
 
   # Make a shared list of goals used by all ants
+  # TODO can skip this until we actually need to pick a goal
   log "Looking for goals"
   goals = Goal.all
   log "Found #{goals.size} initial goals"
@@ -37,7 +38,12 @@ ai.run do |ai|
 
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
-  ants_to_move = ai.my_ants.shuffle # jitter the move order so if we're running out of time, we don't always get the same ants stuck
+
+  # escorting ants go to the back of the line, so they don't get in the way of their escort targets
+  ants_to_move = ai.my_ants.sort_by do |ant|
+    ant.goal.kind_of?(Escort) ? 1 : -1
+  end
+
   stuck_once = Set.new
 
   until ants_to_move.empty? do
@@ -77,9 +83,6 @@ ai.run do |ai|
     else
       log "#{ant} will continue with #{ant.goal}"
     end
-
-    # TODO some goals never or almost expire (defend, escort, wander)
-    # - time them out eventually so ants can reconsider
 
     # As of now, +next_square+ isn't *required* to use the valid list,
     # it's just a hint. It's still the caller's job to ensure valid
