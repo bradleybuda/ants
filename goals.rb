@@ -153,7 +153,7 @@ class Escort
   CAN_ESCORT = [Eat, Explore, Raze, Kill]
 
   def self.all
-    Ant.living.find_all { |ant| ant.goal && ant.goal.valid? && CAN_ESCORT.any? { |goal| ant.goal === goal } }.map { |ant| Escort.new(ant) }
+    Ant.living.find_all { |ant| ant.goal && ant.goal.valid? && CAN_ESCORT.any? { |goal| ant.goal.kind_of?(goal) } }.map { |ant| Escort.new(ant) }
   end
 
   def initialize(ant)
@@ -164,11 +164,19 @@ class Escort
     @ant.alive? && @ant.goal.valid? && CAN_ESCORT.any? { |goal| @ant.goal === goal }
   end
 
+  def distance2(square)
+    @ant.square.distance2(square)
+  end
+
+  def next_square(square, valid_squares)
+    # TODO factor out w/ Destination - this is very similar but a moving target
+    # can't cache routes b/c target moves
+    valid_squares.min_by { |vs| route = vs.route_to(@ant.square); route.nil? ? 1_000_000 : route.length }
+  end
+
   def to_s
     "<Goal: escort #{@ant}>"
   end
-
-  # TODO implement next_square
 end
 
 class Wander
@@ -216,7 +224,7 @@ class Goal
     when Kill then WEIGHTS['kill'] * ai.my_ants.count
     when Defend then WEIGHTS['defend'] * ai.my_ants.count
     when Explore then WEIGHTS['explore']
-    when Escort then WEIGHTS['chase']
+    when Escort then WEIGHTS['escort']
     when Plug then WEIGHTS['plug']
     when Wander then WEIGHTS['wander']
     end
