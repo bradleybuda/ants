@@ -26,7 +26,7 @@ def pick_goal(ai, destinations, ant)
   nearby_destinations = destinations.find_all { |_, square| ant.square.distance2(square) < LOOK_THRESHOLD }
   candidates = if nearby_destinations.empty?
                  log "No nearby destinations, will make a random move"
-                 ant.neighbors.map { |neighbor| [:random, neighbor] }
+                 ant.square.neighbors.map { |neighbor| [:random, neighbor] }
                else
                  nearby_destinations
                end

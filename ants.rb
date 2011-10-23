@@ -4,9 +4,10 @@ LOG = false
 $last_log = Time.now.to_f
 def log(s)
   if LOG
-    interval = ((Time.now.to_f - $last_log) * 1000).to_i
-    $last_log = Time.now.to_f
-    File.open("log.#{Process.pid}", 'a+') { |f| f.puts("[+#{interval}] #{s}") }
+    now = Time.now.to_f
+    interval = ((now - $last_log) * 1000).to_i
+    $last_log = now
+    File.open("log.#{Process.pid}", 'a+') { |f| f.puts("[%.3f] [+%03d] %s" % [now, interval, s]) }
   end
 end
 
@@ -349,7 +350,7 @@ class AI
     @stdout.flush
 
     Square.create_squares(self, @rows, @cols)
-    @did_setup=true
+    @did_setup = true
   end
 
   # Turn logic. If setup wasn't yet called, it will call it (and yield the block in it once).
@@ -358,18 +359,17 @@ class AI
 
     over=false
     until over
-      begin
-        GC.disable
-        @start_time = Time.now.to_f
-        over = read_turn
-        yield self
+      GC.disable
 
-        @stdout.puts 'go'
-        @stdout.flush
-      ensure
-        GC.enable
-        GC.start
-      end
+      over = read_turn
+
+      yield self
+
+      @stdout.puts 'go'
+      @stdout.flush
+
+      GC.enable
+      GC.start
     end
   end
 
@@ -426,6 +426,7 @@ class AI
       _, num = *rd.match(/\Aturn (\d+)\Z/)
       @turn_number=num.to_i
       log "Starting turn #{@turn_number}"
+      @start_time = Time.now.to_f
     end
 
     # reset the map data
