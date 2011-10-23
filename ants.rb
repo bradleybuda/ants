@@ -1,6 +1,6 @@
 require 'set'
 
-LOG = false
+LOG = true
 $last_log = Time.now.to_f
 def log(s)
   if LOG
@@ -22,7 +22,6 @@ class Ant
   attr_accessor :square, :next_square
   attr_accessor :alive, :ai
   attr_accessor :goal
-  attr_accessor :route
 
   def initialize(alive, owner, square, ai)
     @alive, @owner, @square, @ai = alive, owner, square, ai
@@ -40,6 +39,10 @@ class Ant
 
   def self.at(square)
     @@my_living_ants[square]
+  end
+
+  def self.living
+    @@my_living_ants.values
   end
 
   def self.advance_all!
@@ -66,15 +69,15 @@ class Ant
   # Equivalent to ant.owner!=0.
   def enemy?; owner!=0; end
 
-  # Returns the row of square this ant is standing at.
-  def row; @square.row; end
-  # Returns the column of square this ant is standing at.
-  def col; @square.col; end
-
   # Order this ant to go to a given *adjacent* square and note the next expected position.
   def order_to(adjacent)
     @next_square = adjacent
     @ai.order self.square, square.direction_to(adjacent)
+  end
+
+  def to_s
+    # TODO dead or alive?
+    "<Ant #{@id} at #{@square}>"
   end
 end
 
@@ -223,6 +226,10 @@ class Square
     dr = [(@row - other.row).abs, Square.rows - (@row - other.row).abs].min
     dc = [(@col - other.col).abs, Square.cols - (@col - other.col).abs].min
     (dr**2 + dc**2)
+  end
+
+  def to_s
+    "[#{@row}, #{@col}]"
   end
 
   # A* from http://en.wikipedia.org/wiki/A*

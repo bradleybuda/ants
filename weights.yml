@@ -1,7 +1,8 @@
-food: 2000.0
-explore: 300.0
+eat: 2000.0
 raze: 50.0
 kill: 10.0
 defend: 0.02
+explore: 300.0
 chase: 10.0
 plug: 1000.0
+wander: 0.01
