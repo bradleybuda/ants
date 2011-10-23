@@ -1,0 +1,10 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    ai4r (1.9)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  ai4r
