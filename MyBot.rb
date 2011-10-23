@@ -6,7 +6,7 @@ require 'set'
 require 'psych'
 WEIGHTS_FILE = ARGV[0] || 'weights.yml'
 WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
-LOOK_THRESHOLD = 300
+LOOK_THRESHOLD = 2_000
 
 # higher weights mean higher priorities
 def weight(ai, type)
