@@ -465,16 +465,20 @@ class AI
 
         if owner == 0
           ant = Ant.at(square)
+          # TODO destroy dead ants
+
           if ant.nil?
-            # TODO i think we're trying to issue orders to dead ants...
-            log "no record of my ant at #{square.row}, #{square.col} - newly born? or did we lose him?"
+            if square.hill != 0
+              log "no record of my ant at #{square.row}, #{square.col} - this is a bug. will resurrect"
+            end
+
             ant = Ant.new(alive, 0, square, self)
             log "new ant has id #{ant.id}"
           else
             log "rediscovered ant #{ant.id} at #{square.row}, #{square.col}"
           end
 
-          my_ants.push ant
+          my_ants.push ant if alive
         else
           # we don't try to remember enemy ants
           ant = Ant.new(alive, owner, square, self)
