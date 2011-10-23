@@ -6,7 +6,7 @@ require 'set'
 require 'psych'
 WEIGHTS_FILE = ARGV[0] || 'weights.yml'
 WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
-LOOK_THRESHOLD = 100
+LOOK_THRESHOLD = 300
 
 # higher weights mean higher priorities
 def weight(ai, type)
@@ -17,6 +17,7 @@ def weight(ai, type)
   when :defend then WEIGHTS['defend'] * ai.my_ants.count
   when :explore then WEIGHTS['explore']
   when :chase then WEIGHTS['chase'] # TODO this would be better as "escort"
+  when :plug then WEIGHTS['plug']
   when :random then 1.0
   end
 end
@@ -56,6 +57,8 @@ def valid_goal?(goal)
     destination.neighbors.any? { |neighbor| neighbor.hill && neighbor.hill == 0 }
   when :kill
     destination.ant && destination.ant.enemy?
+  when :plug
+    false # plug missions only last one turn?
   when :chase
     false # chase missions only last one turn
   end
@@ -66,6 +69,8 @@ module Enumerable
     sort_by { Kernel.rand }.first
   end
 end
+
+avoid_growth = false
 
 ai = AI.new
 
@@ -90,6 +95,8 @@ ai.run do |ai|
       [:explore, square]
     elsif square.hill && square.hill != 0
       [:raze, square]
+    elsif avoid_growth && square.hill && square.hill == 0
+      [:plug, square]
     elsif square.neighbors.any? { |neighbor| neighbor.hill && neighbor.hill == 0 }
       [:defend, square]
     elsif square.ant && square.ant.enemy?
@@ -103,7 +110,7 @@ ai.run do |ai|
   # Pessimistically assume ants are staying put, but remove from this list if they move
   off_limits = Set.new
   ai.my_ants.each { |ant| off_limits.add(ant.square) }
-  ai.my_hills.each { |square| off_limits.add(square) }
+  ai.my_hills.each { |square| off_limits.add(square) } unless avoid_growth
 
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
@@ -115,7 +122,8 @@ ai.run do |ai|
     remaining_budget = budget - elapsed_time
     log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
     if remaining_budget <= 0
-      log "Out of time, aborting with #{ants_to_move.size} unmoved ants"
+      log "Out of time, aborting with #{ants_to_move.size} unmoved ants. Will avoid spawning new ants."
+      avoid_growth = true
       break
     end
 

@@ -4,3 +4,4 @@ raze: 50.0
 kill: 10.0
 defend: 0.02
 chase: 10.0
+plug: 1000.0
