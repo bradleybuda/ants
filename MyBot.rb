@@ -4,7 +4,8 @@ require 'ants.rb'
 require 'set'
 
 require 'psych'
-WEIGHTS = Psych.load(File.open('weights.yml', 'r'))
+WEIGHTS_FILE = ARGV[0] || 'weights.yml'
+WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
 LOOK_THRESHOLD = 200 # TODO tune me; might need to depend on map size
 
 # higher weights mean higher priorities
