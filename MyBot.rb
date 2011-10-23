@@ -5,6 +5,7 @@ require 'set'
 
 require 'psych'
 WEIGHTS = Psych.load(File.open('weights.yml', 'r'))
+LOOK_THRESHOLD = 150 # tune me; might need to depend on map size
 
 # higher weights mean higher priorities
 def weight(ai, type)
@@ -20,8 +21,10 @@ end
 
 def pick_goal(ai, destinations, ant)
   # pick a destination based on proximity and a weighting factor
-  # TODO maybe a maximum distance on each destination?
-  type, destination = destinations.min_by { |type, square| Math.sqrt(ant.square.distance2(square).to_f) / weight(ai, type) }
+  nearby_destinations = destinations.find_all { |_, square| ant.square.distance2(square) < LOOK_THRESHOLD }
+  candidates = nearby_destinations.empty? ? destinations : nearby_destinations
+
+  type, destination = candidates.min_by { |type, square| Math.sqrt(ant.square.distance2(square).to_f) / weight(ai, type) }
   log "Goal is #{type} at #{destination.row}, #{destination.col}"
   [type, destination]
 end
@@ -96,6 +99,7 @@ ai.run do |ai|
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
   ants_to_move = ai.my_ants.shuffle # jitter the move order so if we're running out of time, we don't always get the same ants stuck
+  stuck_once = Set.new
 
   until ants_to_move.empty? || ((Time.now.to_f - start_time) > budget) do
     ant = ants_to_move.shift
@@ -104,8 +108,14 @@ ai.run do |ai|
     # delay orders if we're stuck
     valid = Set.new(ant.square.neighbors.reject { |neighbor| off_limits.include?(neighbor) })
     if valid.empty?
-      log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck, delaying orders"
-      ants_to_move.push(ant)
+      if stuck_once.member?(ant)
+        log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck again, abandoning"
+      else
+        log "Ant #{ant.id} at #{ant.row}, #{ant.col} is stuck, delaying orders until later"
+        ants_to_move.push(ant)
+        stuck_once.add(ant)
+      end
+
       next
     end
 
