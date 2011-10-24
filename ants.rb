@@ -191,7 +191,7 @@ class Square
   end
 
   def frontier?
-    !neighbors.all?(&:observed?)
+    observed? && ! neighbors.all?(&:observed?)
   end
 
   def has_food?
