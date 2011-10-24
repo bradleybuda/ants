@@ -1,16 +1,5 @@
 require 'set'
 
-LOG = false
-$last_log = Time.now.to_f
-def log(s)
-  if LOG
-    now = Time.now.to_f
-    interval = ((now - $last_log) * 1000).to_i
-    $last_log = now
-    File.open("log.#{Process.pid}", 'a+') { |f| f.puts("[%.3f] [+%03d] %s" % [now, interval, s]) }
-  end
-end
-
 # Represents a single ant.
 class Ant
   @@my_living_ants = {}
