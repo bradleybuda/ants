@@ -14,11 +14,17 @@ class Chromosome
                     end
   end
 
+  # Fitness is memoized across generations. If we vary the fitness
+  # function over time, need to revisit this.
   def fitness
+    @_fitness ||= calculate_fitness
+  end
+
+  def calculate_fitness
     data.write(File.open('/tmp/matrix', 'w'))
 
     # play a 1-1 vs a CPU and see how we do
-    max_turns = 5
+    max_turns = 500
     cmd = "/Users/brad/src/ants-tools/playgame.py --verbose --nolaunch --turns #{max_turns} --map_file /Users/brad/src/ants-tools/maps/maze/maze_02p_01.map '/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby /Users/brad/src/ants/MyBot.rb /tmp/matrix' 'python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py'"
     #puts cmd
     result = `#{cmd}`
@@ -37,16 +43,16 @@ class Chromosome
   end
 
   def mutation
-    raw = bits
+    s = bits_as_string
 
     # Pick a random byte and bit within that byte to mutate
-    byte_idx = rand(BYTE_LENGTH)
-    bit_mask = [0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000][rand(8)]
-    raw.setbyte(byte_idx, raw.getbyte(byte_idx) ^ bit_mask)
+    byte_idx = rand(BYTE_LENGTH * 8)
+    s[byte_idx] = (s[byte_idx] == "0") ? "1" : "0"
 
-    mutated_buffer = StringIO.new(raw)
-    mutated_data = ParamsMatrix.new(mutated_buffer)
-    Chromosome.new(mutated_data)
+    raw = [bits_as_string].pack("B*")
+    buffer = StringIO.new(raw)
+    data = ParamsMatrix.new(buffer)
+    Chromosome.new(data)
   end
 
   def crossover(other)
@@ -58,6 +64,8 @@ class Chromosome
       dad_bits = dad.bits_as_string
 
       bits_as_string = mom_bits[0, crossover_point] + dad_bits[crossover_point, BYTE_LENGTH * 8]
+
+      # TODO duplicate code
       raw = [bits_as_string].pack("B*")
       buffer = StringIO.new(raw)
       data = ParamsMatrix.new(buffer)
@@ -76,14 +84,18 @@ end
 
 # main
 if __FILE__ == $0
-  population = Array.new(10) { Chromosome.new }
   generation = 0
+  population = Array.new(10) { Chromosome.new }
 
   loop do
+    puts "Starting generation #{generation}"
     ranked = population.sort_by(&:fitness)
+    puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
 
     # Save the winner
     ranked.first.data.write(File.open("best-#{generation}", "w"))
+
+    generation += 1
 
     # Each generation is made up of:
     # 1 elite
@@ -95,9 +107,8 @@ if __FILE__ == $0
       kids = mom.crossover(dad)
       new_population += kids
     end
-    new_population += Array.new(2) { Chromosome.new }
 
+    new_population += Array.new(2) { Chromosome.new }
     population = new_population
-    generation += 1
   end
 end
