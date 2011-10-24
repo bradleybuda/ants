@@ -173,12 +173,16 @@ class Square
     direction_to_neighbors.find { |direction, neighbor| neighbor == destination }.first
   end
 
-  def observe_visible_from_here!
+  def visit!
     return 0 if @already_observed_from_here == true
     vis = visible_squares.reject(&:observed?)
     vis.each(&:observe!)
-    @already_observed_from_here = true
+    @visited = true
     return vis.size
+  end
+
+  def visited?
+    @visited
   end
 
   def observed?
@@ -198,7 +202,7 @@ class Square
   end
 
   def frontier?
-    !observed? && neighbors.any?(&:observed?)
+    !neighbors.all?(&:observed?)
   end
 
   def has_food?

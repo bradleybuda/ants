@@ -69,7 +69,7 @@ class Explore < Destination
   end
 
   def valid?
-    super && !@square.observed?
+    super && !@square.visited?
   end
 
   def to_s

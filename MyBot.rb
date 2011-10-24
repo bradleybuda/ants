@@ -24,7 +24,7 @@ ai.run do |ai|
 
   # Update map visibility
   log "Updating visible squares for #{ai.my_ants.count} ants"
-  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.observe_visible_from_here! }
+  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.visit! }
   log "Updated visibility of #{updated} squares"
 
   # Make a shared list of goals used by all ants
