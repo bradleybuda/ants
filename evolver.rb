@@ -108,6 +108,27 @@ if __FILE__ == $0
   loop do
     puts "Starting generation #{generation} with population #{population.size}"
 
+    # force each chromosome to compute fitness, 3-at-a-time
+    work_queue = population.dup
+    mutex = Mutex.new
+
+    workers = Array.new(3) do |i|
+      Thread.new do
+        loop do
+          item = nil
+          mutex.synchronize { item = work_queue.shift }
+          break unless item
+
+          STDERR.puts "[#{i}] Working on item"
+          item.fitness # callee will cache this
+        end
+        STDERR.puts "[#{i}] Done working"
+      end
+    end
+
+    workers.each(&:join)
+
+    # Join the results
     ranked = population.sort_by(&:fitness).reverse
     puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
 
