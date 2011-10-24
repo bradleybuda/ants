@@ -97,7 +97,8 @@ if __FILE__ == $0
 
   loop do
     puts "Starting generation #{generation}"
-    ranked = population.sort_by(&:fitness)
+
+    ranked = population.sort_by(&:fitness).reverse
     puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
 
     # Save the winner
