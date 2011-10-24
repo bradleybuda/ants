@@ -39,7 +39,8 @@ ai.run do |ai|
   # TODO can skip this until we actually need to pick a goal
   log "Looking for goals"
   goals = Goal.all
-  log "Found #{goals.size} initial goals"
+  goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
+  log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
   # Keep track of ant positions
   # Pessimistically assume ants are staying put, but remove from this list if they move
