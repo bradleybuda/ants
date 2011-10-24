@@ -33,8 +33,10 @@ class Chromosome
     # play 1-1 vs a CPU on every 2-player map and see how we do
     maps = Dir["/Users/brad/src/ants-tools/maps/**/*_02p_*.map"]
 
-    net_score = 0
-    total_turns = 0
+    # Score is unweighted average share of total available
+    # points. This normalizes difference between maps that have
+    # different numbers of available points.
+    scores = []
 
     maps.each do |map|
       cmd = "#{playgame} --fill --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
@@ -44,20 +46,17 @@ class Chromosome
       result =~ /^score (\d+) (\d+)$/
       my_score = $1.to_i
       opponent_score = $2.to_i
-
-      net_score += (my_score - opponent_score)
-
       result =~ /^playerturns (\d+)/
       turns = $1.to_i
 
-      total_turns += turns
+      puts [map, my_score, opponent_score, turns].inspect
+
+      scores << my_score.to_f / (my_score + opponent_score)
     end
 
     # higher is better
-    fitness = [net_score, 1.0 / total_turns]
-    puts fitness.inspect
-
-    fitness
+    puts scores.inspect
+    scores.inject(&:+) / scores.size
   end
 
   def mutation
