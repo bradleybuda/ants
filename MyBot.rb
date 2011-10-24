@@ -103,8 +103,8 @@ ai.run do |ai|
     else
       # this should never happen right?
       if stuck_once.member?(ant)
-        log "#{ant} is stuck again, clearing goal and issuing no orders"
-        ant.goal = nil
+        log "#{ant} is stuck again, telling it to spread out"
+        ant.goal = Wander.instance
       else
         log "#{ant} is stuck, delaying orders until later"
         ants_to_move.push(ant)

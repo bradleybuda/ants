@@ -1,6 +1,6 @@
 require 'set'
 
-LOG = true
+LOG = false
 $last_log = Time.now.to_f
 def log(s)
   if LOG
