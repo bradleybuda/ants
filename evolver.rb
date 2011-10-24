@@ -93,7 +93,7 @@ if __FILE__ == $0
     puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
 
     # Save the winner
-    ranked.first.data.write(File.open("best-#{generation}", "w"))
+    ranked.first.data.write(File.open("best-#{Process.pid}-#{generation}", "w"))
 
     generation += 1
 
