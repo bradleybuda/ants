@@ -241,6 +241,9 @@ class Goal
   def self.weight(stats, goal)
     weights = MATRIX.to_weights(stats.to_a)
     goal_index = CONCRETE_GOALS.index(goal.class)
+
+    log "Current weights based on environment are #{CONCRETE_GOALS.zip(weights.map { |w| Math.log(w).to_i })}"
+
     weights[goal_index]
   end
 
