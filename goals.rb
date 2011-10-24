@@ -214,7 +214,9 @@ class Wander
     0.1 # wander is always nearby but non-zero
   end
 
-  def next_square(ant, valid_squares)
+  def next_square(ant, blacklist)
+    valid_squares = ant.square.neighbors - blacklist
+
     # give wander a bias toward open space
     # not sure if this is a good policy or not
     valid_squares.max_by { |square| square.neighbors.count }
