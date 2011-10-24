@@ -235,6 +235,7 @@ class Square
   # A* from http://en.wikipedia.org/wiki/A*
   def route_to(goal, blacklist)
     log "looking for route from #{self} to #{goal} avoiding #{blacklist.to_a}"
+    return nil if blacklist.member?(goal)
 
     closed_set = Set.new
     open_set = Set.new([self])
