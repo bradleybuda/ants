@@ -32,7 +32,7 @@ class Chromosome
 
     data.write(File.open(data_file, 'w'))
 
-    cmd = "#{playgame} --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+    cmd = "#{playgame} --fill --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
     #puts cmd
     result = `#{cmd}`
     STDERR.puts result
@@ -112,6 +112,8 @@ if __FILE__ == $0
     # 1 mutant elite
     # 6 offsping of the top 6 elements
     # 2 new contenders
+    #
+    # TODO higher initial mutation rate (since initial population is so uniform?)
     new_population = [ranked.first, ranked.first.mutation]
     ranked.first(6).each_slice(2) do |mom, dad|
       kids = mom.crossover(dad)
