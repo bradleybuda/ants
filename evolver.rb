@@ -23,11 +23,11 @@ class Chromosome
   def calculate_fitness
     # play a 1-1 vs a CPU and see how we do
     playgame = "/Users/brad/src/ants-tools/playgame.py"
-    map = "/Users/brad/src/ants-tools/maps/maze/maze_02p_01.map"
+    map = "/Users/brad/src/ants-tools/maps/random_walk/random_walk_02p_01.map"
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
     data_file = '/tmp/matrix'
-    max_turns = 500
+    max_turns = 300
     opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
 
     data.write(File.open(data_file, 'w'))
@@ -35,6 +35,7 @@ class Chromosome
     cmd = "#{playgame} --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
     #puts cmd
     result = `#{cmd}`
+    STDERR.puts result
 
     result =~ /^score (\d+) (\d+)$/
     my_score = $1.to_i
