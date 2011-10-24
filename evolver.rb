@@ -1,91 +1,25 @@
 #!/usr/bin/env ruby
 
-require 'ai4r'
-require 'psych'
+require './params_matrix.rb'
 
-DEFAULTS = Psych.load(File.open('weights.yml', 'r'))
+class Chromosome
+  BYTE_LENGTH = 256
 
-class AntChromosome
-  @@all = []
-  @@lock = Mutex.new
-  @@ran_tournaments = false
+  attr_reader :data
 
-  def self.run_tournaments_if_necessary!
-    @@lock.synchronize do
-      return if @@ran_tournaments
-
-      # pick a game size of 2-10 players
-      game_size = rand(9) + 2
-      STDERR.puts "Will play #{game_size} player games"
-
-      # generate round-robin games until everyone has played an equal number
-      player_order = @@all.sort_by { rand }
-      to_play = player_order.dup
-
-      until to_play.empty? do
-        to_play += player_order.dup if to_play.size < game_size
-
-        next_game = to_play.shift(game_size)
-        play_game(next_game)
-      end
-
-      @@ran_tournaments = true # TODO when does this reset?
-    end
-  end
-
-  def self.play_game(players)
-    STDERR.puts "Playing a game"
-    # TODO
-  end
-
-  attr_reader :params
-
-  # Ai4r hooks
-  attr_accessor :normalized_fitness
-
-  def self.seed
-    chromosome = AntChromosome.new(DEFAULTS)
-    self.mutate(chromosome)
-    return chromosome
-  end
-
-  def self.reproduce(a, b)
-    # buggy fucking library
-    a = a.first if a.kind_of? Array
-    b = b.first if b.kind_of? Array
-
-    keys = a.params.keys
-    k1, k2 = keys.partition { rand < 0.5 }
-
-    child_params = {}
-
-    k1.each { |key| child_params[key] = a.params[key] }
-    k2.each { |key| child_params[key] = b.params[key] }
-
-    AntChromosome.new(child_params)
-  end
-
-  def self.mutate(chromosome)
-    if chromosome.normalized_fitness && rand < ((1 - chromosome.normalized_fitness) * 0.3)
-      key = chromosome.params.keys.min_by { rand }
-      old_value = chromosome.params[key]
-      new_value = 2**(rand * 2 - 1) * old_value
-      chromosome.params[key] = new_value
-
-      @fitness = nil
-    end
-  end
-
-  def initialize(params)
-    @params = params
+  def initialize(data = nil)
+    @data = data || begin
+                      `dd if=/dev/urandom of=/tmp/matrix bs=#{BYTE_LENGTH} count=1 2> /dev/null`
+                      ParamsMatrix.new(File.open('/tmp/matrix'))
+                    end
   end
 
   def fitness
-    # play a 1-1 vs a CPU and see how we do
-    File.open('/tmp/ant-params.yml', 'w') { |f| f.write(Psych.dump(@params)) }
+    data.write(File.open('/tmp/matrix', 'w'))
 
-    max_turns = 1_000
-    cmd = "/Users/brad/src/ants-tools/playgame.py --verbose --nolaunch --turns #{max_turns} --map_file /Users/brad/src/ants-tools/maps/maze/maze_02p_01.map '/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby /Users/brad/src/ants/MyBot.rb /tmp/ant-params.yml' 'python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py'"
+    # play a 1-1 vs a CPU and see how we do
+    max_turns = 5
+    cmd = "/Users/brad/src/ants-tools/playgame.py --verbose --nolaunch --turns #{max_turns} --map_file /Users/brad/src/ants-tools/maps/maze/maze_02p_01.map '/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby /Users/brad/src/ants/MyBot.rb /tmp/matrix' 'python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py'"
     #puts cmd
     result = `#{cmd}`
 
@@ -101,15 +35,69 @@ class AntChromosome
 
     fitness
   end
+
+  def mutation
+    raw = bits
+
+    # Pick a random byte and bit within that byte to mutate
+    byte_idx = rand(BYTE_LENGTH)
+    bit_mask = [0b00000001, 0b00000010, 0b00000100, 0b00001000, 0b00010000, 0b00100000, 0b01000000, 0b10000000][rand(8)]
+    raw.setbyte(byte_idx, raw.getbyte(byte_idx) ^ bit_mask)
+
+    mutated_buffer = StringIO.new(raw)
+    mutated_data = ParamsMatrix.new(mutated_buffer)
+    Chromosome.new(mutated_data)
+  end
+
+  def crossover(other)
+    # will crossover immediately to the left of this character index
+    crossover_point = rand(BYTE_LENGTH * 8 - 1) + 1
+
+    [[self, other], [other, self]].map do |mom, dad|
+      mom_bits = mom.bits_as_string
+      dad_bits = dad.bits_as_string
+
+      bits_as_string = mom_bits[0, crossover_point] + dad_bits[crossover_point, BYTE_LENGTH * 8]
+      raw = [bits_as_string].pack("B*")
+      buffer = StringIO.new(raw)
+      data = ParamsMatrix.new(buffer)
+      Chromosome.new(data)
+    end
+  end
+
+  def bits_as_string
+    buffer = StringIO.new
+    data.write(buffer)
+    s = buffer.string
+    s.force_encoding("ASCII-8BIT")
+    s.unpack("B*").first
+  end
 end
 
-Ai4r::GeneticAlgorithm::Chromosome = AntChromosome
+# main
+if __FILE__ == $0
+  population = Array.new(10) { Chromosome.new }
+  generation = 0
 
+  loop do
+    ranked = population.sort_by(&:fitness)
 
+    # Save the winner
+    ranked.first.data.write(File.open("best-#{generation}", "w"))
 
-#population = Array.new(10) { AntParameters.new(defaults) }
+    # Each generation is made up of:
+    # 1 elite
+    # 1 mutant elite
+    # 6 offsping of the top 6 elements
+    # 2 new contenders
+    new_population = [ranked.first, ranked.first.mutation]
+    ranked.first(6).each_slice(2) do |mom, dad|
+      kids = mom.crossover(dad)
+      new_population += kids
+    end
+    new_population += Array.new(2) { Chromosome.new }
 
-search = Ai4r::GeneticAlgorithm::GeneticSearch.new(10, 20)
-result = search.run
-
-p result
+    population = new_population
+    generation += 1
+  end
+end
