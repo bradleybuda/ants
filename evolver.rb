@@ -94,9 +94,10 @@ end
 if __FILE__ == $0
   generation = 0
   population = Array.new(10) { Chromosome.new }
+  ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
 
   loop do
-    puts "Starting generation #{generation}"
+    puts "Starting generation #{generation} with population #{population.size}"
 
     ranked = population.sort_by(&:fitness).reverse
     puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
