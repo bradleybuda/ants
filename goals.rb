@@ -239,23 +239,23 @@ class Goal
 
   # TODO simplify
   # higher weights mean higher priorities
-  def self.weight(ai, goal)
+  def self.weight(stats, goal)
     case goal
-    when Eat then WEIGHTS['eat'] / ai.my_ants.count
-    when Raze then WEIGHTS['raze'] * ai.my_ants.count
-    when Kill then WEIGHTS['kill'] * ai.my_ants.count
-    when Defend then WEIGHTS['defend'] * ai.my_ants.count
+    when Eat then WEIGHTS['eat']
+    when Raze then WEIGHTS['raze']
+    when Kill then WEIGHTS['kill']
+    when Defend then WEIGHTS['defend']
     when Explore then WEIGHTS['explore']
-    when Escort then WEIGHTS['escort'] * ai.my_ants.count
+    when Escort then WEIGHTS['escort']
     when Plug then WEIGHTS['plug']
     when Wander then WEIGHTS['wander']
     end
   end
 
-  def self.pick(ai, goals, ant)
+  def self.pick(stats, goals, ant)
     # pick a destination based on proximity and a weighting factor
     nearby_goals = goals.find_all { |goal| goal.distance2(ant.square) < NEARBY_THRESHOLD }
-    goal = nearby_goals.max_by { |goal| weight(ai, goal) / Math.sqrt(goal.distance2(ant.square)) }
+    goal = nearby_goals.max_by { |goal| weight(stats, goal) / Math.sqrt(goal.distance2(ant.square)) }
     log "Picked goal #{goal} for #{ant}"
     goal
   end

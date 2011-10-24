@@ -3,6 +3,7 @@ $:.unshift File.dirname($0)
 require 'ants.rb'
 require 'goals.rb'
 require 'log.rb'
+require 'stats.rb'
 
 require 'set'
 
@@ -28,6 +29,10 @@ ai.run do |ai|
   log "Updating visible squares for #{ai.my_ants.count} ants"
   updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.visit! }
   log "Updated visibility of #{updated} squares"
+
+  # Compute game statistics for weighting model
+  stats = Stats.new(ai)
+  log "Current turn statistics are #{stats.inspect}"
 
   # Make a shared list of goals used by all ants
   # TODO can skip this until we actually need to pick a goal
@@ -83,10 +88,10 @@ ai.run do |ai|
 
     if ant.goal.nil?
       log "#{ant} has no goal, needs a new one"
-      ant.goal = Goal.pick(ai, goals, ant)
+      ant.goal = Goal.pick(stats, goals, ant)
     elsif !ant.goal.valid?
       log "#{ant} can no longer execute #{ant.goal}, picking a new one"
-      ant.goal = Goal.pick(ai, goals, ant)
+      ant.goal = Goal.pick(stats, goals, ant)
     else
       log "#{ant} will continue with #{ant.goal}"
     end
