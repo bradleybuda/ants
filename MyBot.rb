@@ -1,9 +1,10 @@
 $:.unshift File.dirname($0)
 
 require 'ants.rb'
+require 'stats.rb'
+require 'params_matrix.rb'
 require 'goals.rb'
 require 'log.rb'
-require 'stats.rb'
 
 require 'set'
 

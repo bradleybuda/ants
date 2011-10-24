@@ -1,8 +1,6 @@
 require 'psych'
 require 'singleton'
 
-WEIGHTS_FILE = ARGV[0] || 'weights.yml'
-WEIGHTS = Psych.load(File.open(WEIGHTS_FILE, 'r'))
 
 # TODO persist goals from turn-to-turn to make the all call less expensive?
 # Create goals as data stream comes in (i.e. food and hills)
@@ -227,7 +225,8 @@ class Wander
   end
 end
 
-# Manager class
+MATRIX_FILE = ARGV[0] || 'matrix'
+MATRIX = ParamsMatrix.new(File.open(MATRIX_FILE))
 
 class Goal
   NEARBY_THRESHOLD = 1_000
@@ -237,19 +236,10 @@ class Goal
     CONCRETE_GOALS.inject([]) { |acc, klass| klass.all + acc }
   end
 
-  # TODO simplify
-  # higher weights mean higher priorities
   def self.weight(stats, goal)
-    case goal
-    when Eat then WEIGHTS['eat']
-    when Raze then WEIGHTS['raze']
-    when Kill then WEIGHTS['kill']
-    when Defend then WEIGHTS['defend']
-    when Explore then WEIGHTS['explore']
-    when Escort then WEIGHTS['escort']
-    when Plug then WEIGHTS['plug']
-    when Wander then WEIGHTS['wander']
-    end
+    weights = MATRIX.to_weights(stats.to_a)
+    goal_index = CONCRETE_GOALS.index(goal.class)
+    weights[goal_index]
   end
 
   def self.pick(stats, goals, ant)
