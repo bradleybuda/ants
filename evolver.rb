@@ -21,9 +21,7 @@ class Chromosome
   end
 
   def calculate_fitness
-    # play a 1-1 vs a CPU and see how we do
     playgame = "/Users/brad/src/ants-tools/playgame.py"
-    map = "/Users/brad/src/ants-tools/maps/random_walk/random_walk_02p_01.map"
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
     data_file = '/tmp/matrix'
@@ -32,20 +30,32 @@ class Chromosome
 
     data.write(File.open(data_file, 'w'))
 
-    cmd = "#{playgame} --fill --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
-    #puts cmd
-    result = `#{cmd}`
-    STDERR.puts result
+    # play 1-1 vs a CPU on every 2-player map and see how we do
+    maps = Dir["/Users/brad/src/ants-tools/maps/**/*_02p_*.map"]
 
-    result =~ /^score (\d+) (\d+)$/
-    my_score = $1.to_i
-    opponent_score = $2.to_i
+    net_score = 0
+    total_turns = 0
 
-    result =~ /^playerturns (\d+)/
-    turns = $1.to_i
+    maps.each do |map|
+      cmd = "#{playgame} --fill --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+      result = `#{cmd}`
+      STDERR.puts result
 
-    fitness = (my_score - opponent_score).to_f / turns.to_f
-    STDERR.puts [fitness, my_score, opponent_score, turns].inspect
+      result =~ /^score (\d+) (\d+)$/
+      my_score = $1.to_i
+      opponent_score = $2.to_i
+
+      net_score += (my_score - opponent_score)
+
+      result =~ /^playerturns (\d+)/
+      turns = $1.to_i
+
+      total_turns += turns
+    end
+
+    # higher is better
+    fitness = [net_score, 1.0 / total_turns]
+    puts fitness.inspect
 
     fitness
   end
