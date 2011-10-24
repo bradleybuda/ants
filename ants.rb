@@ -150,7 +150,7 @@ class Square
 
   def neighbors
     @neighbors ||= make_neighbors
-    @neighbors.values
+    Set.new(@neighbors.values)
   end
 
   def direction_to_neighbors
@@ -233,8 +233,8 @@ class Square
   end
 
   # A* from http://en.wikipedia.org/wiki/A*
-  def route_to(goal)
-    log "looking for route from #{self.row}, #{self.col} to #{goal.row}, #{goal.col}"
+  def route_to(goal, blacklist)
+    log "looking for route from #{self} to #{goal} avoiding #{blacklist.to_a}"
 
     closed_set = Set.new
     open_set = Set.new([self])
@@ -246,7 +246,6 @@ class Square
 
     until open_set.empty? do
       x = open_set.sort_by { |o| f_score[o] }.first
-#      log "trying #{x.row}, #{x.col}"
 
       if x == goal
         path = reconstruct_path(came_from, goal)
@@ -258,8 +257,7 @@ class Square
       open_set.delete(x)
       closed_set.add(x)
 
-#      log "neighbors are #{x.neighbors.map { |s| [s.row, s.col] }}"
-      x.neighbors.each do |y|
+      (x.neighbors - blacklist).each do |y|
         next if closed_set.member?(y)
 
         tentative_g_score = g_score[x] + 1

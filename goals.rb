@@ -23,23 +23,20 @@ class Destination
     square.distance2(@square) + 0.1 # prevent zero distance, which can cause ants to get stuck
   end
 
-  def next_square(ant, valid_squares)
+  def next_square(ant, blacklist)
     return nil if ant.square == @square # arrived
 
-    if (!@route_cache[ant] || !valid_squares.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
+    if (!@route_cache[ant] || blacklist.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
       log "Generating new route for #{ant} to #{@square} (cache missing or invalid)"
 
-      # we don't have a route, or we can't use it any more
-      routes = valid_squares.map do |vs|
-        route = vs.route_to(@square)
-        route.nil? ? nil : [vs] + route
-      end.compact
+      route = ant.square.route_to(@square, blacklist)
 
-      if routes.empty?
+      if route.nil?
         log "No route to destination"
         return nil
       end
-      @route_cache[ant] = routes.min_by(&:length)
+
+      @route_cache[ant] = route
     end
 
     @route_cache[ant].shift
@@ -192,10 +189,11 @@ class Escort
     @ant.square.distance2(square)
   end
 
-  def next_square(ant, valid_squares)
+  def next_square(ant, blacklist)
     # TODO factor out w/ Destination - this is very similar but a moving target
     # can't cache routes b/c target moves
-    valid_squares.min_by { |vs| route = vs.route_to(@ant.square); route.nil? ? 1_000_000 : route.length }
+    route = ant.square.route_to(@ant.square, blacklist)
+    route.nil? ? nil : route.first
   end
 
   def to_s

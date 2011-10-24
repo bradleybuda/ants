@@ -3,6 +3,6 @@ raze: 100.0
 kill: 50.0
 defend: 0.01
 explore: 500.0
-escort: 100.0
+escort: 50.0
 plug: 100.0
 wander: 2.0
