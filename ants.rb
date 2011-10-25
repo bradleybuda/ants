@@ -381,7 +381,7 @@ class AI
     warn "unexpected: #{rd}" unless rd=='turn 0'
 
     until((rd=@stdin.gets.strip)=='ready')
-      _, name, value = *rd.match(/\A([a-z0-9]+) (\d+)\Z/)
+      _, name, value = *rd.match(/\A([a-z0-9_]+) (-?\d+)\Z/)
 
       case name
       when 'loadtime'; @loadtime=value.to_i
@@ -392,7 +392,7 @@ class AI
       when 'viewradius2'; @viewradius2=value.to_i
       when 'attackradius2'; @attackradius2=value.to_i
       when 'spawnradius2'; @spawnradius2=value.to_i
-      when 'seed'; @seed=value.to_i
+      when 'player_seed'; @seed=value.to_i
       else
         warn "unexpected: #{rd}"
       end
