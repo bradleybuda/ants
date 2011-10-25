@@ -21,7 +21,7 @@ ai.setup do |ai|
 end
 
 # wish this didn't have to be so conservative...
-TIME_SELF_OUT = false
+TIME_SELF_OUT = true
 TIMEOUT_FUDGE = 0.5
 
 ai.run do |ai|
