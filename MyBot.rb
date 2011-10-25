@@ -5,6 +5,7 @@ require 'stats.rb'
 require 'params_matrix.rb'
 require 'goals.rb'
 require 'log.rb'
+require 'square.rb'
 
 require 'set'
 
@@ -29,7 +30,7 @@ ai.run do |ai|
 
   # Update map visibility
   log "Updating visible squares for #{ai.my_ants.count} ants"
-  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.visit! }
+  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.visit!(ai.viewradius2) }
   log "Updated visibility of #{updated} squares"
 
   # Compute game statistics for weighting model
