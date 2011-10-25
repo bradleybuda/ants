@@ -21,13 +21,13 @@ class Destination
     square.distance2(@square) + 0.1 # prevent zero distance, which can cause ants to get stuck
   end
 
-  def next_square(ant, blacklist)
+  def next_square(ant)
     return nil if ant.square == @square # arrived
 
-    if (!@route_cache[ant] || blacklist.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
+    if (!@route_cache[ant] || ant.square.blacklist.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
       log "Generating new route for #{ant} to #{@square} (cache missing or invalid)"
 
-      route = ant.square.route_to(@square, blacklist)
+      route = ant.square.route_to(@square)
 
       if route.nil?
         log "No route to destination"
@@ -91,7 +91,7 @@ end
 
 class Kill < Destination
   def self.all
-    Square.all.find_all { |square| square.ant && square.ant.enemy? }.map { |square| Kill.new(square) }
+    Square.all.find_all { |square| square.enemy_ant }.map { |square| Kill.new(square) }
   end
 
   def valid?
@@ -187,10 +187,10 @@ class Escort
     @ant.square.distance2(square)
   end
 
-  def next_square(ant, blacklist)
+  def next_square(ant)
     # TODO factor out w/ Destination - this is very similar but a moving target
     # can't cache routes b/c target moves
-    route = ant.square.route_to(@ant.square, blacklist)
+    route = ant.square.route_to(@ant.square)
     route.nil? ? nil : route.first
   end
 
@@ -214,8 +214,8 @@ class Wander
     1.0 # put in a little anti-wander bias
   end
 
-  def next_square(ant, blacklist)
-    valid_squares = ant.square.neighbors - blacklist
+  def next_square(ant)
+    valid_squares = ant.square.neighbors - ant.square.blacklist
 
     # give wander a bias toward open space
     # not sure if this is a good policy or not
@@ -239,6 +239,7 @@ class Goal
   end
 
   def self.weight(stats, goal)
+    # TODO cache the hell out of this
     weights = MATRIX.to_weights(stats.to_a)
     goal_index = CONCRETE_GOALS.index(goal.class)
 

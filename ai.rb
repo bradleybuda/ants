@@ -1,76 +1,8 @@
-require 'set'
-
-# Represents a single ant.
-class Ant
-  @@my_living_ants = {}
-  @@next_ant_id = 0
-
-  # Owner of this ant. If it's 0, it's your ant.
-  attr_accessor :owner, :id
-  # Square this ant sits on.
-  attr_accessor :square, :next_square
-  attr_accessor :alive, :ai
-  attr_accessor :goal
-
-  def initialize(alive, owner, square, ai)
-    @alive, @owner, @square, @ai = alive, owner, square, ai
-
-    if @owner == 0
-      # assign an ID
-      @id = @@next_ant_id
-      @@next_ant_id += 1
-
-      # keep track of current and next locations
-      @@my_living_ants[@square] = self
-      @next_square = @square
-    end
-  end
-
-  def self.at(square)
-    @@my_living_ants[square]
-  end
-
-  def self.living
-    @@my_living_ants.values
-  end
-
-  def self.advance_all!
-    last_locations = @@my_living_ants
-    @@my_living_ants = {}
-    last_locations.values.each do |ant|
-      next if ant.dead?
-
-      @@my_living_ants[ant.next_square] = ant
-
-      # update current and next squares
-      ant.square = ant.next_square
-      ant.next_square = ant.square
-    end
-  end
-
-  # True if ant is alive.
-  def alive?; @alive; end
-  # True if ant is not alive.
-  def dead?; !@alive; end
-
-  # Equivalent to ant.owner==0.
-  def mine?; owner==0; end
-  # Equivalent to ant.owner!=0.
-  def enemy?; owner!=0; end
-
-  # Order this ant to go to a given *adjacent* square and note the next expected position.
-  def order_to(adjacent)
-    @next_square = adjacent
-    @ai.order self.square, square.direction_to(adjacent)
-  end
-
-  def to_s
-    # TODO dead or alive?
-    "<Ant #{@id} at #{@square}>"
-  end
-end
+require 'singleton'
 
 class AI
+  include Singleton
+
   # Map, as an array of arrays.
   attr_accessor :map
   # Number of current turn. If it's 0, we're in setup turn. If it's :game_over, you don't need to give any orders; instead, you can find out the number of players and their scores in this game.
@@ -86,20 +18,16 @@ class AI
   # Array of scores of players (you are player 0). Available only after game's over.
   attr_accessor :score
 
-  attr_accessor :my_ants, :my_hills, :enemy_ants
+  attr_accessor :my_hills
 
   attr_reader :start_time
 
   # Initialize a new AI object. Arguments are streams this AI will read from and write to.
-  def initialize stdin=$stdin, stdout=$stdout
-    @stdin, @stdout = stdin, stdout
-
+  def initialize
     @map = nil
     @turn_number = 0
 
     @my_hills = []
-    @my_ants = []
-    @enemy_ants = []
 
     @did_setup = false
   end
@@ -127,8 +55,8 @@ class AI
     read_intro
     yield self
 
-    @stdout.puts 'go'
-    @stdout.flush
+    STDOUT.puts 'go'
+    STDOUT.flush
 
     Square.create_squares(@rows, @cols)
     @did_setup = true
@@ -146,8 +74,8 @@ class AI
 
       yield self
 
-      @stdout.puts 'go'
-      @stdout.flush
+      STDOUT.puts 'go'
+      STDOUT.flush
 
       GC.enable
       GC.start
@@ -156,10 +84,10 @@ class AI
 
   # Internal; reads zero-turn input (game settings).
   def read_intro
-    rd=@stdin.gets.strip
+    rd=STDIN.gets.strip
     warn "unexpected: #{rd}" unless rd=='turn 0'
 
-    until((rd=@stdin.gets.strip)=='ready')
+    until((rd=STDIN.gets.strip)=='ready')
       _, name, value = *rd.match(/\A([a-z0-9_]+) (-?\d+)\Z/)
 
       case name
@@ -189,16 +117,16 @@ class AI
   # Internal; reads turn input (map state).
   def read_turn
     ret=false
-    rd=@stdin.gets.strip
+    rd=STDIN.gets.strip
 
     if rd=='end'
       @turn_number=:game_over
 
-      rd=@stdin.gets.strip
+      rd=STDIN.gets.strip
       _, players = *rd.match(/\Aplayers (\d+)\Z/)
       @players = players.to_i
 
-      rd=@stdin.gets.strip
+      rd=STDIN.gets.strip
       _, score = *rd.match(/\Ascore (\d+(?: \d+)+)\Z/)
       @score = score.split(' ').map{|s| s.to_i}
 
@@ -215,14 +143,12 @@ class AI
     log "Reset map data"
 
     # update the expected position of each ant
-    Ant.advance_all!
+    Ant.advance_turn!
     log "Advanced all ant positions"
 
     @my_hils = []
-    @my_ants = []
-    @enemy_ants = []
 
-    until((rd=@stdin.gets.strip)=='go')
+    until((rd=STDIN.gets.strip)=='go')
       _, type, row, col, owner = *rd.match(/(w|f|h|a|d) (\d+) (\d+)(?: (\d+)|)/)
       row, col = row.to_i, col.to_i
       owner = owner.to_i if owner
@@ -242,25 +168,23 @@ class AI
         alive = (type == 'a')
 
         if owner == 0
-          ant = Ant.at(square)
-          # TODO destroy dead ants
+          ant = square.ant
 
           if ant.nil?
             if square.hill != 0
               log "no record of my ant at #{square.row}, #{square.col} - this is a bug. will resurrect"
             end
 
-            ant = Ant.new(alive, 0, square, self)
+            ant = Ant.new(square, alive)
             log "new ant has id #{ant.id}"
           else
             log "rediscovered ant #{ant.id} at #{square.row}, #{square.col}"
           end
 
-          my_ants.push ant if alive
+          ant.alive = alive
         else
-          # we don't try to remember enemy ants
-          ant = Ant.new(alive, owner, square, self)
-          enemy_ants.push ant
+          # we don'te try to remember enemy ants
+          square.enemy_ant = owner
         end
       when 'r'
         # pass
@@ -285,11 +209,11 @@ class AI
     if !c # assume two-argument form: ant, direction
       ant, direction = a, b
       log "Moving #{direction}"
-      @stdout.puts "o #{ant.row} #{ant.col} #{direction.to_s.upcase}"
+      STDOUT.puts "o #{ant.row} #{ant.col} #{direction.to_s.upcase}"
     else # assume three-argument form: row, col, direction
       col, row, direction = a, b, c
       log "Moving #{direction}"
-      @stdout.puts "o #{row} #{col} #{direction.to_s.upcase}"
+      STDOUT.puts "o #{row} #{col} #{direction.to_s.upcase}"
     end
   end
 

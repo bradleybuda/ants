@@ -1,6 +1,7 @@
 $:.unshift File.dirname($0)
 
-require 'ants.rb'
+require 'ai.rb'
+require 'ant.rb'
 require 'stats.rb'
 require 'params_matrix.rb'
 require 'goals.rb'
@@ -15,9 +16,7 @@ module Enumerable
   end
 end
 
-ai = AI.new
-
-ai.setup do |ai|
+AI.instance.setup do |ai|
   log "Mybot: Setup"
 end
 
@@ -25,12 +24,14 @@ end
 TIME_SELF_OUT = true
 TIMEOUT_FUDGE = 0.5
 
-ai.run do |ai|
+AI.instance.run do |ai|
   budget = (ai.turntime / 1000.0) * TIMEOUT_FUDGE
 
+  living = Ant.living
+
   # Update map visibility
-  log "Updating visible squares for #{ai.my_ants.count} ants"
-  updated = ai.my_ants.inject(0) { |total, ant| total + ant.square.visit!(ai.viewradius2) }
+  log "Updating visible squares for #{living.count} ants"
+  updated = living.inject(0) { |total, ant| total + ant.square.visit!(ai.viewradius2) }
   log "Updated visibility of #{updated} squares"
 
   # Compute game statistics for weighting model
@@ -44,17 +45,10 @@ ai.run do |ai|
   goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
   log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
-  # Keep track of ant positions
-  # Pessimistically assume ants are staying put, but remove from this list if they move
-  off_limits = Set.new
-  ai.my_ants.each { |ant| off_limits << ant.square }
-  ai.my_hills.each { |square| off_limits << square } unless Plug.active?
-
   # Make a queue of ants to move
   # Ideally, this might be a priority queue based on each ant's goal value
-
-  # escorting ants go to the back of the line, so they don't get in the way of their escort targets
-  ants_to_move = ai.my_ants.sort_by do |ant|
+  # Escorting ants go to the back of the line, so they don't get in the way of their escort targets
+  ants_to_move = living.sort_by do |ant|
     ant.goal.kind_of?(Escort) ? 1 : -1
   end
 
@@ -75,7 +69,8 @@ ai.run do |ai|
 
     # delay orders if we're stuck
     # TODO i don't think we need this code, we have the same logic below
-    valid = ant.square.neighbors - off_limits
+    # TODO deduplicate this - square should have an unblocked_neighbors method or something
+    valid = ant.square.neighbors - ant.square.blacklist
     if valid.empty?
       if stuck_once.member?(ant)
         log "#{ant} is stuck again, abandoning"
@@ -100,16 +95,13 @@ ai.run do |ai|
       log "#{ant} will continue with #{ant.goal}"
     end
 
-    route_blacklist = ant.square.neighbors & off_limits
-    next_square = ant.goal.next_square(ant, route_blacklist)
+    next_square = ant.goal.next_square(ant)
     log "#{ant} wants to go to #{next_square}"
 
     if next_square == ant.square
       log "#{ant} will stay put to execute #{ant.goal}"
     elsif valid.member?(next_square)
       log "#{ant} will move to #{next_square}"
-      off_limits.delete(ant.square) unless ant.square.hill == 0
-      off_limits << next_square
       ant.order_to next_square
     else
       # this should never happen right?

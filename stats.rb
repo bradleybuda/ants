@@ -9,11 +9,11 @@ class Stats
       observed += 1 if square.observed?
       visited += 1 if square.visited?
       food += 1 if square.has_food?
-      enemy_hills +=1 if square.hill && square.hill != 1
+      enemy_hills += 1 if square.hill && square.hill != 1
+      enemy_ants += 1 if square.enemy_ant
     end
 
     my_ants = Ant.living.count
-    enemy_ants = ai.enemy_ants.count
     my_hills = ai.my_hills.count
 
     # These are rates instead of ratios to avoid low-precision
