@@ -21,6 +21,7 @@ ai.setup do |ai|
 end
 
 # wish this didn't have to be so conservative...
+TIME_SELF_OUT = false
 TIMEOUT_FUDGE = 0.5
 
 ai.run do |ai|
@@ -62,7 +63,7 @@ ai.run do |ai|
     elapsed_time = Time.now.to_f - ai.start_time
     remaining_budget = budget - elapsed_time
     log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
-    if remaining_budget <= 0
+    if TIME_SELF_OUT && remaining_budget <= 0
       log "Out of time, aborting with #{ants_to_move.size} unmoved ants. Will avoid spawning new ants."
       Plug.enable!
       break

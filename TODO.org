@@ -32,6 +32,6 @@ this can be a "smarter escort" goal
 * TODO escort inversion - if i'm escorting you, but i'm on the way to your goal, then you should be escorting me
 * IN_PROGRESS make profilable
 ** DONE make runs deterministic w/r/t initial seed
-** TODO add flag to ignore time budget
+** DONE add flag to ignore time budget
 ** TODO run a slow map with high timeout value, capture input, ensure no timeouts
 ** TODO rerun with same intput repeatedly under profiler
