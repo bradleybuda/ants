@@ -392,7 +392,7 @@ class AI
       when 'viewradius2'; @viewradius2=value.to_i
       when 'attackradius2'; @attackradius2=value.to_i
       when 'spawnradius2'; @spawnradius2=value.to_i
-      when 'player_seed'; @seed=value.to_i
+      when 'player_seed'; @seed=value.to_i; srand(@seed);
       else
         warn "unexpected: #{rd}"
       end
