@@ -4,8 +4,8 @@ require 'active_support/core_ext'
 require './params_matrix.rb'
 
 class Chromosome
-  BYTE_LENGTH = 256
-  MAX_TURNS = 500
+  BYTE_LENGTH = 64
+  MAX_TURNS = 300
 
   attr_reader :data
 
@@ -14,19 +14,20 @@ class Chromosome
                       `dd if=/dev/urandom of=/tmp/matrix bs=#{BYTE_LENGTH} count=1 2> /dev/null`
                       ParamsMatrix.new(File.open('/tmp/matrix'))
                     end
+    @_fitness = {}
   end
 
   # Fitness is memoized across generations. If we vary the fitness
   # function over time, need to revisit this.
-  def fitness
-    @_fitness ||= calculate_fitness
+  def fitness(player_seed, engine_seed)
+    @_fitness[[player_seed, engine_seed]] ||= calculate_fitness(player_seed, engine_seed)
   end
 
-  def calculate_fitness
+  def calculate_fitness(player_seed, engine_seed)
     playgame = "/Users/brad/src/ants-tools/playgame.py"
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
-    data_file = '/tmp/matrix'
+    data_file = "/tmp/matrix-#{rand(100_000_000)}"
     opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
 
     data.write(File.open(data_file, 'w'))
@@ -40,7 +41,7 @@ class Chromosome
     scores = []
 
     maps.each do |map|
-      cmd = "#{playgame} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+      cmd = "#{playgame} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
       result = `#{cmd}`
       STDERR.puts result
 
@@ -107,13 +108,16 @@ if __FILE__ == $0
   ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
 
   loop do
+    player_seed = rand(1_000_000)
+    engine_seed = rand(1_000_000)
+
     puts "Starting generation #{generation} with population #{population.size}"
 
     # force each chromosome to compute fitness, 3-at-a-time
     work_queue = population.dup
     mutex = Mutex.new
 
-    workers = Array.new(3) do |i|
+    workers = Array.new(6) do |i|
       Thread.new do
         loop do
           item = nil
@@ -121,7 +125,7 @@ if __FILE__ == $0
           break unless item
 
           STDERR.puts "[#{i}] Working on item"
-          item.fitness # callee will cache this
+          item.fitness(player_seed, engine_seed) # callee will cache this
         end
         STDERR.puts "[#{i}] Done working"
       end
@@ -130,8 +134,8 @@ if __FILE__ == $0
     workers.each(&:join)
 
     # Join the results
-    ranked = population.sort_by(&:fitness).reverse
-    puts "Fitness scores: #{ranked.map(&:fitness).inspect}"
+    ranked = population.sort_by { |c| c.fitness(player_seed, engine_seed) }.reverse
+    puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed) }.inspect}"
 
     # Save the winner
     ranked.first.data.write(File.open("best-#{Process.pid}-#{generation}", "w"))
