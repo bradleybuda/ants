@@ -141,10 +141,6 @@ class Square
     @neighbors.delete(direction)
   end
 
-  def coords
-    [@row, @col]
-  end
-
   def distance2(other)
     dr = [(@row - other.row).abs, Square.rows - (@row - other.row).abs].min
     dc = [(@col - other.col).abs, Square.cols - (@col - other.col).abs].min
