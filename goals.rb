@@ -231,7 +231,7 @@ MATRIX_FILE = ARGV[0] || 'matrix'
 MATRIX = ParamsMatrix.new(File.open(MATRIX_FILE))
 
 class Goal
-  NEARBY_THRESHOLD = 1_000
+  NEARBY_THRESHOLD = 200
   CONCRETE_GOALS = [Eat, Raze, Kill, Defend, Explore, Escort, Plug, Wander]
 
   def self.all
@@ -242,7 +242,7 @@ class Goal
     weights = MATRIX.to_weights(stats.to_a)
     goal_index = CONCRETE_GOALS.index(goal.class)
 
-    log "Current weights based on environment are #{CONCRETE_GOALS.zip(weights.map { |w| Math.log(w).to_i })}"
+    log "Current weights based on #{stats.to_a} are #{CONCRETE_GOALS.zip(weights.map(&:to_i))}"
 
     weights[goal_index]
   end
@@ -250,8 +250,8 @@ class Goal
   def self.pick(stats, goals, ant)
     # pick a destination based on proximity and a weighting factor
     nearby_goals = goals.find_all { |goal| goal.distance2(ant.square) < NEARBY_THRESHOLD }
-    goal = nearby_goals.max_by { |goal| weight(stats, goal) / Math.sqrt(goal.distance2(ant.square)) }
-    log "Picked goal #{goal} for #{ant}"
+    goal = nearby_goals.max_by { |goal| weight(stats, goal) }
+    log "Picked goal #{goal} for #{ant} from among #{nearby_goals.count} nearby goal(s)"
     goal
   end
 end

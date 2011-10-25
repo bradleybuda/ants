@@ -2,13 +2,13 @@ class ParamsMatrix
   def initialize(io)
     io.binmode
     packed = io.read
-    @matrix = packed.unpack("L*")
+    @matrix = packed.unpack("C*")
     io.close
   end
 
   def write(io)
     io.binmode
-    packed = @matrix.pack("L*")
+    packed = @matrix.pack("C*")
     io.write(packed)
     io.close
   end
