@@ -1,4 +1,5 @@
 source :rubygems
 
-gem 'ai4r'
+gem 'activesupport'
+gem 'i18n'
 gem 'pry'

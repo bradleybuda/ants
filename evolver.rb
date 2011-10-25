@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
 
+require 'active_support/core_ext'
 require './params_matrix.rb'
 
 class Chromosome
   BYTE_LENGTH = 256
+  MAX_TURNS = 500
 
   attr_reader :data
 
@@ -25,7 +27,6 @@ class Chromosome
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
     data_file = '/tmp/matrix'
-    max_turns = 300
     opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
 
     data.write(File.open(data_file, 'w'))
@@ -39,7 +40,7 @@ class Chromosome
     scores = []
 
     maps.each do |map|
-      cmd = "#{playgame} --fill --verbose --nolaunch --turns #{max_turns} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+      cmd = "#{playgame} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
       result = `#{cmd}`
       STDERR.puts result
 
@@ -137,14 +138,13 @@ if __FILE__ == $0
 
     generation += 1
 
-    # Each generation is made up of:
-    # 1 elite
-    # 1 mutant elite
-    # 6 offsping of the top 6 elements
-    # 2 new contenders
-    #
-    # TODO higher initial mutation rate (since initial population is so uniform?)
-    new_population = [ranked.first, ranked.first.mutation]
+    # Create new generation from elite, mutants, crossovers, and randoms
+    new_population = [
+                      ranked.first,
+                      ranked.first.mutation,
+                      ranked.second.mutation.mutation,
+                      ranked.second.mutation.mutation.mutation,
+                    ]
     ranked.first(6).each_slice(2) do |mom, dad|
       kids = mom.crossover(dad)
       new_population += kids

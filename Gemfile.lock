@@ -1,10 +1,13 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    ai4r (1.9)
+    activesupport (3.1.1)
+      multi_json (~> 1.0)
     coderay (0.9.8)
+    i18n (0.6.0)
     method_source (0.6.6)
       ruby_parser (~> 2.0.5)
+    multi_json (1.0.3)
     pry (0.9.6.2)
       coderay (~> 0.9.8)
       method_source (~> 0.6.5)
@@ -19,5 +22,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  ai4r
+  activesupport
+  i18n
   pry
