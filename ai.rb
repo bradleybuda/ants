@@ -30,6 +30,9 @@ class AI
     @my_hills = []
 
     @did_setup = false
+
+    @stdin = STDIN
+    @stdout = STDOUT
   end
 
   # Returns a read-only hash of all settings.
@@ -55,8 +58,8 @@ class AI
     read_intro
     yield self
 
-    STDOUT.puts 'go'
-    STDOUT.flush
+    @stdout.puts 'go'
+    @stdout.flush
 
     Square.create_squares(@rows, @cols)
     @did_setup = true
@@ -74,8 +77,8 @@ class AI
 
       yield self
 
-      STDOUT.puts 'go'
-      STDOUT.flush
+      @stdout.puts 'go'
+      @stdout.flush
 
       GC.enable
       GC.start
@@ -84,10 +87,10 @@ class AI
 
   # Internal; reads zero-turn input (game settings).
   def read_intro
-    rd=STDIN.gets.strip
+    rd=@stdin.gets.strip
     warn "unexpected: #{rd}" unless rd=='turn 0'
 
-    until((rd=STDIN.gets.strip)=='ready')
+    until((rd=@stdin.gets.strip)=='ready')
       _, name, value = *rd.match(/\A([a-z0-9_]+) (-?\d+)\Z/)
 
       case name
@@ -117,16 +120,16 @@ class AI
   # Internal; reads turn input (map state).
   def read_turn
     ret=false
-    rd=STDIN.gets.strip
+    rd=@stdin.gets.strip
 
     if rd=='end'
       @turn_number=:game_over
 
-      rd=STDIN.gets.strip
+      rd=@stdin.gets.strip
       _, players = *rd.match(/\Aplayers (\d+)\Z/)
       @players = players.to_i
 
-      rd=STDIN.gets.strip
+      rd=@stdin.gets.strip
       _, score = *rd.match(/\Ascore (\d+(?: \d+)+)\Z/)
       @score = score.split(' ').map{|s| s.to_i}
 
@@ -142,13 +145,14 @@ class AI
     Square.reset!
     log "Reset map data"
 
-    # update the expected position of each ant
+    # update the expected position of each ant - as a side-effect,
+    # also updates the Square -> Ant links
     Ant.advance_turn!
     log "Advanced all ant positions"
 
     @my_hils = []
 
-    until((rd=STDIN.gets.strip)=='go')
+    until((rd=@stdin.gets.strip)=='go')
       _, type, row, col, owner = *rd.match(/(w|f|h|a|d) (\d+) (\d+)(?: (\d+)|)/)
       row, col = row.to_i, col.to_i
       owner = owner.to_i if owner
@@ -172,13 +176,14 @@ class AI
 
           if ant.nil?
             if square.hill != 0
-              log "no record of my ant at #{square.row}, #{square.col} - this is a bug. will resurrect"
+              # maybe a newborn ant, but I haven't received the hill message yet?
+              log "[BUG] no record of my ant at #{square}"
             end
 
             ant = Ant.new(square, alive)
             log "new ant has id #{ant.id}"
           else
-            log "rediscovered ant #{ant.id} at #{square.row}, #{square.col}"
+            log "rediscovered ant #{ant.id} at #{square}"
           end
 
           ant.alive = alive
@@ -209,11 +214,11 @@ class AI
     if !c # assume two-argument form: ant, direction
       ant, direction = a, b
       log "Moving #{direction}"
-      STDOUT.puts "o #{ant.row} #{ant.col} #{direction.to_s.upcase}"
+      @stdout.puts "o #{ant.row} #{ant.col} #{direction.to_s.upcase}"
     else # assume three-argument form: row, col, direction
       col, row, direction = a, b, c
       log "Moving #{direction}"
-      STDOUT.puts "o #{row} #{col} #{direction.to_s.upcase}"
+      @stdout.puts "o #{row} #{col} #{direction.to_s.upcase}"
     end
   end
 
