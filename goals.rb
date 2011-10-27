@@ -88,7 +88,7 @@ class Kill < Destination
   end
 
   def valid?
-    super && @square.ant && @square.ant.owner != 0
+    super && @square.enemy_ant
   end
 
   def to_s
