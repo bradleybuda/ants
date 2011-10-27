@@ -10,6 +10,8 @@ class Ant
 
   def initialize(square)
     @square = @next_square = square
+    @square.ant = self
+    @square.next_ant = self
 
     @id = @@next_ant_id
     @@next_ant_id += 1
