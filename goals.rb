@@ -45,21 +45,14 @@ class Destination
   end
 end
 
-# concrete goals
-
-class Eat < Destination
-  def self.all
-    Square.all.find_all(&:has_food?).map { |square| Eat.new(square) }
-  end
-
-  def valid?
-    super && @square.has_food?
-  end
-
-  def to_s
-    "<Goal: eat food at #{@square}>"
+class NextToDestination < Destination
+  def initialize(destination, point_of_interest)
+    super(destination)
+    @point_of_interest = point_of_interest
   end
 end
+
+# concrete goals
 
 class Explore < Destination
   def self.all
@@ -103,7 +96,7 @@ class Kill < Destination
   end
 end
 
-class Defend < Destination
+class Defend < NextToDestination
   def self.all
     results = []
 
@@ -118,18 +111,37 @@ class Defend < Destination
     results
   end
 
-  def initialize(square, hill_square)
-    super(square)
-    @hill_square = hill_square
-  end
-
   def valid?
     # TODO invalid if another ant is on the spot
-    @hill_square.hill && @hill_square.hill == 0 && rand > 0.2 # don't defend too long
+    @point_of_interest.hill && @point_of_interest.hill == 0 && rand > 0.2 # don't defend too long
   end
 
   def to_s
-    "<Goal: defend #{@hill_square} from #{@square}>"
+    "<Goal: defend #{@point_of_interest} from #{@square}>"
+  end
+end
+
+class Eat < NextToDestination
+  def self.all
+    results = []
+
+    Square.all.each do |square|
+      if square.has_food?
+        square.neighbors.each do |neighbor|
+          results << Eat.new(neighbor, square)
+        end
+      end
+    end
+
+    results
+  end
+
+  def valid?
+    @point_of_interest.has_food?
+  end
+
+  def to_s
+    "<Goal: eat food at #{@point_of_interest} from #{@square}>"
   end
 end
 
