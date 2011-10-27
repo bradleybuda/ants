@@ -19,13 +19,13 @@
 can we use this same logic for hunting enemies?
 * DONE simplify goal / route code - too many interdependencies
 * DONE run in strict orders mode and root out invalid orders (rare but they happen)
-* TODO reexpore goal - go back to squares we haven't seen in a while
+* DONE priority queue for ant movement - ants with most important / nearest goals get to go first in case we timeout
+* DONE more aggressive local timeout - don't let the server time us out
+* TODO patrol goal - go back to squares we haven't seen in a while
 * TODO make it faster
 * TODO avenge goal - head to dead ally
 * TODO overrun goal - head to dead enemy
 * TODO limit goal pursuit time - cache only a partial route then reacquire goal
-* TODO priority queue for ant movement - ants with most important / nearest goals get to go first in case we timeout
-* TODO more aggressive local timeout - don't let the server time us out
 * TODO index square types for destination generation
 * TODO limit number of ants that can pursue a goal? i.e. don't have everyone chase the same food
 * TODO cache long-lived routes? i.e. route to enemy hill
@@ -44,3 +44,5 @@ Should it always be lower? How to incorporate escort's own column in the priorit
 
 * TODO shadow goal - move in formation with another adjacent ant
 * TODO better capture state of dead ally / enemy
+* TODO chokepoint goal - defend a point with few land squares within the fight radius (and high connectivity?)
+maybe just look for a 2x1 or 3x1 with water on either side
