@@ -2,6 +2,7 @@
 # unknown - once a square is observed as water, it is deleted
 class Square
   @@index = nil
+  @@observed = []
 
   # pretty-print map for debugging
   def self.dump_map(from, to)
@@ -38,6 +39,10 @@ class Square
 
   def self.all
     @@index.flatten.compact
+  end
+
+  def self.observed
+    @@observed
   end
 
   def self.rows
@@ -112,6 +117,7 @@ class Square
 
   def observe!
     @observed = true
+    @@observed << self
   end
 
   def visible_squares(viewradius2)

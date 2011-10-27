@@ -77,7 +77,7 @@ end
 
 class Explore < Destination
   def self.all
-    Square.all.find_all(&:frontier?).map { |square| Explore.new(square) }
+    Square.observed.find_all { |square| square.frontier? }.map { |square| Explore.new(square) }
   end
 
   def valid?
