@@ -177,16 +177,17 @@ class AI
           if ant.nil?
             if square.hill != 0
               # maybe a newborn ant, but I haven't received the hill message yet?
-              log "[BUG] no record of my ant at #{square}"
+              # it looks like hill messages always come first, but that may not be guaranteed
+              raise "[BUG] no record of my ant at #{square}"
             end
 
-            ant = Ant.new(square, alive)
+            ant = Ant.new(square)
             log "new ant has id #{ant.id}"
           else
             log "rediscovered ant #{ant.id} at #{square}"
           end
 
-          ant.alive = alive
+          ant.die! unless alive
         else
           # we don'te try to remember enemy ants
           square.enemy_ant = owner

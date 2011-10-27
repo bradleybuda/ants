@@ -1,6 +1,6 @@
 # Represents a single friendly ant. Enemy ants don't get a class
 class Ant
-  @@all = []
+  @@living = []
   @@next_ant_id = 0
 
   attr_accessor :id
@@ -9,15 +9,14 @@ class Ant
   attr_accessor :goal
   attr_accessor :alive
 
-  def initialize(square, alive)
+  def initialize(square)
     @square = @next_square = square
     link_squares_to_me!
-    @alive = alive
 
     @id = @@next_ant_id
     @@next_ant_id += 1
 
-    @@all << self
+    @@living << self
   end
 
   # TODO do this when dead
@@ -31,16 +30,21 @@ class Ant
     @next_square.next_ant = self
   end
 
-  def self.all
-    @@all
-  end
-
   def self.living
-    @@all.find_all(&:alive?)
+    @@living
   end
 
   def self.advance_turn!
-    self.all.each(&:advance_turn!)
+    self.living.each(&:advance_turn!)
+  end
+
+  def alive?
+    @@living.member?(self)
+  end
+
+  def die!
+    @@living.delete(self)
+    clear_square_links!
   end
 
   # TODO can I combine this somehow with order_to?
@@ -49,9 +53,6 @@ class Ant
     @square = @next_square
     link_squares_to_me!
   end
-
-  def alive?; @alive; end
-  def dead?; !@alive; end
 
   # Order this ant to go to a given *adjacent* square and note the next expected position.
   def order_to(adjacent)
