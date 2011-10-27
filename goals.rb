@@ -66,10 +66,14 @@ class Destination < Goal
   end
 end
 
-class NextToDestination < Destination
-  def initialize(destination, point_of_interest)
+class NextToItem < Destination
+  def initialize(destination, item)
     super(destination)
-    @point_of_interest = point_of_interest
+    @item = item
+  end
+
+  def valid?
+    @item.exists?
   end
 end
 
@@ -91,15 +95,20 @@ end
 
 class Raze < Destination
   def self.all
-    Square.all.find_all { |square| square.hill && square.hill != 0 }.map { |square| Raze.new(square) }
+    Hill.all.find_all(&:enemy?).map { |hill| Raze.new(hill) }
+  end
+
+  def initialize(hill)
+    super(hill.square)
+    @hill = hill
   end
 
   def valid?
-    super && @square.hill && @square.hill != 0
+    @hill.exists?
   end
 
   def to_s
-    "<Goal: raze enemy hill at #{@square}>"
+    "<Goal: raze #{@hill}>"
   end
 end
 
@@ -117,24 +126,17 @@ class Kill < Destination
   end
 end
 
-class Defend < NextToDestination
+class Defend < NextToItem
   def self.all
     results = []
 
-    Square.all.each do |square|
-      if square.hill && square.hill == 0
-        square.neighbors.each do |neighbor|
-          results << Defend.new(neighbor, square)
-        end
+    Hill.all.find_all(&:mine?).each do |hill|
+      hill.square.neighbors.each do |neighbor|
+        results << Defend.new(neighbor, hill)
       end
     end
 
     results
-  end
-
-  def valid?
-    # TODO invalid if another ant is on the spot
-    @point_of_interest.hill && @point_of_interest.hill == 0 && rand > 0.2 # don't defend too long
   end
 
   def to_s
@@ -142,23 +144,17 @@ class Defend < NextToDestination
   end
 end
 
-class Eat < NextToDestination
+class Eat < NextToItem
   def self.all
     results = []
 
-    Square.all.each do |square|
-      if square.has_food?
-        square.neighbors.each do |neighbor|
-          results << Eat.new(neighbor, square)
-        end
+    Food.all.each do |food|
+      food.square.neighbors.each do |neighbor|
+        results << Eat.new(neighbor, food)
       end
     end
 
     results
-  end
-
-  def valid?
-    @point_of_interest.has_food?
   end
 
   def to_s

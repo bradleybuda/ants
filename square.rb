@@ -63,8 +63,8 @@ class Square
 
   attr_reader :row, :col
   attr_accessor :ant, :next_ant
-  attr_accessor :hill, :food
   attr_accessor :enemy_ant
+  attr_accessor :item
 
   def initialize(row, col)
     @row = row
@@ -133,7 +133,11 @@ class Square
   end
 
   def has_food?
-    @food
+    @item && @item.kind_of?(Food)
+  end
+
+  def has_hill?
+    @item && @item.kind_of?(Hill)
   end
 
   def destroy!
@@ -225,8 +229,6 @@ class Square
   end
 
   def reset!
-    @food = false
-    @hill = false
     @enemy_ant = false
     @next_ant = @ant = nil
   end

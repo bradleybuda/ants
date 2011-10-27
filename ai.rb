@@ -18,16 +18,12 @@ class AI
   # Array of scores of players (you are player 0). Available only after game's over.
   attr_accessor :score
 
-  attr_accessor :my_hills
-
   attr_reader :start_time
 
   # Initialize a new AI object. Arguments are streams this AI will read from and write to.
   def initialize
     @map = nil
     @turn_number = 0
-
-    @my_hills = []
 
     @did_setup = false
 
@@ -150,8 +146,6 @@ class AI
     Ant.advance_turn!
     log "Advanced all ant positions"
 
-    @my_hils = []
-
     until((rd=@stdin.gets.strip)=='go')
       _, type, row, col, owner = *rd.match(/(w|f|h|a|d) (\d+) (\d+)(?: (\d+)|)/)
       row, col = row.to_i, col.to_i
@@ -163,12 +157,19 @@ class AI
       when 'w'
         square.destroy!
       when 'f'
-        log "food at #{square.row}, #{square.col}"
-        square.food = true
+        if square.has_food?
+          square.item.sense!
+        else
+          food = Food.new(square, @viewradius2)
+          log "Sensed #{food}"
+        end
       when 'h'
-        # TODO do we get told about enemy hills even if we can't currently see them?
-        square.hill = owner
-        my_hills.push square if owner == 0
+        if square.has_hill?
+          square.item.sense!
+        else
+          hill = Hill.new(owner, square, @viewradius2)
+          log "Sensed #{hill}"
+        end
       when 'a', 'd'
         alive = (type == 'a')
 
@@ -176,14 +177,14 @@ class AI
           ant = square.ant
 
           if ant.nil?
-            if square.hill != 0
+            if square.has_hill? && square.item.mine?
+              ant = Ant.new(square)
+              log "new ant has id #{ant.id}"
+            else
               # maybe a newborn ant, but I haven't received the hill message yet?
               # it looks like hill messages always come first, but that may not be guaranteed
               raise "[BUG] no record of my ant at #{square}"
             end
-
-            ant = Ant.new(square)
-            log "new ant has id #{ant.id}"
           else
             log "rediscovered ant #{ant.id} at #{square}"
           end
@@ -199,6 +200,9 @@ class AI
         warn "unexpected: #{rd}"
       end
     end
+
+    # clean up missing items
+    Item.all.each(&:destroy_if_unsensed!)
 
     log "Got go! signal from game"
 

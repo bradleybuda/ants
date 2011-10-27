@@ -1,4 +1,5 @@
 # Represents a single friendly ant. Enemy ants don't get a class
+# TODO could we gain anything by having Ant subclass Item?
 class Ant
   @@living = []
   @@next_ant_id = 0

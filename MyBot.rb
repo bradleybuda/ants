@@ -2,6 +2,7 @@ $:.unshift File.dirname($0)
 
 require 'ai.rb'
 require 'ant.rb'
+require 'items.rb'
 require 'stats.rb'
 require 'params_matrix.rb'
 require 'goals.rb'
