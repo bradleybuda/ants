@@ -46,11 +46,16 @@ AI.instance.run do |ai|
   goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
   log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
-  # Make a queue of ants to move
-  # Ideally, this might be a priority queue based on each ant's goal value
-  # Escorting ants go to the back of the line, so they don't get in the way of their escort targets
+  # Make a priority queue of ants to move
   ants_to_move = living.sort_by do |ant|
-    ant.goal.kind_of?(Escort) ? 1 : -1
+    # two-dimensional sort - first on the goal type, then on the priority
+    if ant.goal.nil?
+      [-1, nil]
+    elsif ant.goal.class == Escort
+      [1, ant.goal.priority]
+    else
+      [0, ant.goal.priority]
+    end
   end
 
   stuck_once = []
