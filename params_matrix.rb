@@ -13,7 +13,7 @@ class ParamsMatrix
     io.close
   end
 
-  def to_weights(stats)
+  def to_priorities(stats)
     weights_size = @matrix.size / stats.size
     vectors = @matrix.each_slice(stats.size)
 

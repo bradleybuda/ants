@@ -36,6 +36,7 @@ AI.instance.run do |ai|
 
   # Compute game statistics for weighting model
   stats = Stats.new(ai)
+  Goal.stats = stats
   log "Current turn statistics are #{stats.inspect}"
 
   # Make a shared list of goals used by all ants
@@ -87,10 +88,10 @@ AI.instance.run do |ai|
 
     if ant.goal.nil?
       log "#{ant} has no goal, needs a new one"
-      ant.goal = Goal.pick(stats, goals, ant)
+      ant.goal = Goal.pick(ant, goals)
     elsif !ant.goal.valid?
       log "#{ant} can no longer execute #{ant.goal}, picking a new one"
-      ant.goal = Goal.pick(stats, goals, ant)
+      ant.goal = Goal.pick(ant, goals)
     else
       log "#{ant} will continue with #{ant.goal}"
     end
