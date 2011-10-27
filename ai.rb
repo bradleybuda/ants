@@ -166,6 +166,7 @@ class AI
         log "food at #{square.row}, #{square.col}"
         square.food = true
       when 'h'
+        # TODO do we get told about enemy hills even if we can't currently see them?
         square.hill = owner
         my_hills.push square if owner == 0
       when 'a', 'd'
