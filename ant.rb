@@ -36,10 +36,10 @@ class Ant
     @square = @next_square = nil
   end
 
-  # TODO can I combine this somehow with order_to?
+  # Entering this method, all squares should have @ant == nil
   def advance_turn!
     @square = @next_square
-    @square.ant = self
+    @square.ant = @square.next_ant = self
   end
 
   # Order this ant to go to a given *adjacent* square and note the next expected position.
