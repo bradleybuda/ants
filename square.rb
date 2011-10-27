@@ -57,8 +57,8 @@ class Square
   end
 
   attr_reader :row, :col
-  attr_accessor :hill, :food
   attr_accessor :ant, :next_ant
+  attr_accessor :hill, :food
   attr_accessor :enemy_ant
 
   def initialize(row, col)
@@ -222,6 +222,6 @@ class Square
     @food = false
     @hill = false
     @enemy_ant = false
-    # don't reset friendly ants - the Ant instance keeps track of that in advance_turn!
+    @next_ant = @ant = nil
   end
 end
