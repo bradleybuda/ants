@@ -35,9 +35,21 @@ class Square
   end
 
   # Build the full grid, assuming no water. As we discover water, squares will be deleted
-  def self.create_squares(rows, cols)
+  def self.create_squares(rows, cols, viewradius2)
+    @@viewradius2 = viewradius2
     @@rows = rows
     @@cols = cols
+
+    @@visibility_mask = []
+    viewradius = Math.sqrt(@@viewradius2).ceil
+    (-1 * viewradius).upto(viewradius).each do |row_offset|
+      (-1 * viewradius).upto(viewradius).each do |col_offset|
+        if distance2(0, 0, row_offset, col_offset) < @@viewradius2
+          @@visibility_mask << [row_offset, col_offset]
+        end
+      end
+    end
+
     @@index = Array.new(@@rows * @@cols) do |i|
       Square.new(i / @@cols, i % @@cols)
     end
@@ -124,7 +136,9 @@ class Square
   end
 
   def visible_squares(viewradius2)
-    @_visibles_squares ||= Square.all.find_all { |square| visible(square, viewradius2) }
+    @_visibles_squares ||= @@visibility_mask.map do |row_offset, col_offset|
+      Square.at(@row + row_offset, @col + col_offset)
+    end.compact
   end
 
   def visible(square, viewradius2)
@@ -156,10 +170,14 @@ class Square
     @neighbors.delete(direction)
   end
 
-  def distance2(other)
-    dr = [(@row - other.row).abs, @@rows - (@row - other.row).abs].min
-    dc = [(@col - other.col).abs, @@cols - (@col - other.col).abs].min
+  def self.distance2(r1, c1, r2, c2)
+    dr = [(r1 - r2).abs, @@rows - (r1 - r2).abs].min
+    dc = [(c1 - c2).abs, @@cols - (c1 - c2).abs].min
     (dr**2 + dc**2)
+  end
+
+  def distance2(other)
+    Square.distance2(@row, @col, other.row, other.col)
   end
 
   def to_s

@@ -57,7 +57,7 @@ class AI
     @stdout.puts 'go'
     @stdout.flush
 
-    Square.create_squares(@rows, @cols)
+    Square.create_squares(@rows, @cols, @viewradius2)
     @did_setup = true
   end
 
