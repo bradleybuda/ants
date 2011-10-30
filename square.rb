@@ -1,14 +1,19 @@
 # Represent a single field of the map. These fields are either land or
 # unknown - once a square is observed as water, it is deleted
 class Square
+  @@rows = nil
+  @@cols = nil
   @@index = nil
+
   @@observed = []
 
   # pretty-print map for debugging
   def self.dump_map(from, to)
     map = ""
-    @@index.each do |row|
-      row.each do |square|
+    0.upto(@rows - 1) do |row|
+      0.upto(@cols - 1) do |col|
+        square = Square.at(row, col)
+
         c = if square.nil?
               'X'
             elsif square == from
@@ -22,6 +27,7 @@ class Square
             end
         map += c
       end
+
       map += "\n"
     end
 
@@ -30,35 +36,31 @@ class Square
 
   # Build the full grid, assuming no water. As we discover water, squares will be deleted
   def self.create_squares(rows, cols)
-    @@index = Array.new(rows) do |row|
-      Array.new(cols) do |col|
-        Square.new(row, col)
-      end
+    @@rows = rows
+    @@cols = cols
+    @@index = Array.new(@@rows * @@cols) do |i|
+      Square.new(i / @@cols, i % @@cols)
     end
   end
 
   def self.all
-    @@index.flatten.compact
+    @@index.compact
   end
 
   def self.observed
     @@observed
   end
 
-  def self.rows
-    @@index.size
-  end
-
-  def self.cols
-    @@index.first.size
-  end
-
   def self.reset!
-    @@index.each { |row| row.each { |square| square.reset! if square } }
+    @@index.each { |square| square.reset! if square }
   end
 
   def self.at(row, col)
-    @@index[row][col]
+    @@index[position_to_index(row, col)]
+  end
+
+  def self.position_to_index(row, col)
+    ((row % @@rows) * @@cols) + (col % @@cols)
   end
 
   attr_reader :row, :col
@@ -85,8 +87,8 @@ class Square
 
   def make_neighbors
     possible_neighbors = [[:e, 0, 1], [:w, 0, -1], [:s, 1, 0], [:n, -1, 0]].map do |direction, row_offset, col_offset|
-      neighbor_row = (@row + row_offset) % Square.rows
-      neighbor_col = (@col + col_offset) % Square.cols
+      neighbor_row = @row + row_offset
+      neighbor_col = @col + col_offset
       [direction, Square.at(neighbor_row, neighbor_col)]
     end
 
@@ -146,7 +148,7 @@ class Square
       neighbor.remove_dead_neighbor(self)
     end
 
-    @@index[@row][@col] = nil
+    @@index[Square.position_to_index(@row, @col)] = nil
   end
 
   def remove_dead_neighbor(dead_neighbor)
@@ -155,8 +157,8 @@ class Square
   end
 
   def distance2(other)
-    dr = [(@row - other.row).abs, Square.rows - (@row - other.row).abs].min
-    dc = [(@col - other.col).abs, Square.cols - (@col - other.col).abs].min
+    dr = [(@row - other.row).abs, @@rows - (@row - other.row).abs].min
+    dc = [(@col - other.col).abs, @@cols - (@col - other.col).abs].min
     (dr**2 + dc**2)
   end
 
