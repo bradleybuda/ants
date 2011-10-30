@@ -21,19 +21,19 @@ can we use this same logic for hunting enemies?
 * DONE run in strict orders mode and root out invalid orders (rare but they happen)
 * DONE priority queue for ant movement - ants with most important / nearest goals get to go first in case we timeout
 * DONE more aggressive local timeout - don't let the server time us out
+* DONE GA algorithm doesn't seem to actually work
 * TODO patrol goal - go back to squares we haven't seen in a while
 * TODO make it faster
 * TODO avenge goal - head to dead ally
 * TODO overrun goal - head to dead enemy
 * TODO limit goal pursuit time - cache only a partial route then reacquire goal
-* TODO index square types for destination generation
+* IN_PROGRESS index square types for destination generation
 * TODO limit number of ants that can pursue a goal? i.e. don't have everyone chase the same food
 * TODO cache long-lived routes? i.e. route to enemy hill
 * TODO ants move as groups / formations
 would it be so hard to make them move 1x2 or 2x2?
 this can be a "smarter escort" goal
 * TODO evolve on different map types and player counts
-* TODO GA algorithm doesn't seem to actually work
 * TODO invalidate routes when water is revealed on route square
 * TODO escort inversion - if i'm escorting you, but i'm on the way to your goal, then you should be escorting me
 * TODO process player elimination messages and update statistics
