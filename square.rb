@@ -71,6 +71,7 @@ class Square
     @col = col
     @observed = false
     @visited = false
+    @item = nil
   end
 
   def neighbors

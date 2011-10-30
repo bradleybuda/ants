@@ -11,7 +11,7 @@ class Item
   def initialize(square, viewradius2)
     @square = square
     @square.item = self
-    @observable_from = Square.all.find_all { |square| @square.visible(square, viewradius2) }
+    @observable_from = Square.all.find_all { |other| @square.visible(other, viewradius2) }
     @@all << self
 
     sense!
@@ -61,7 +61,7 @@ class Hill < Item
   end
 
   def to_s
-    "[#{mine? ? 'My' : 'Enemy'} hill at #{@square}, last seen #{time_since_last_seen} turns ago]"
+    "<#{mine? ? 'My' : 'Enemy'} hill at #{@square}, last seen #{time_since_last_seen} turns ago>"
   end
 end
 
@@ -71,7 +71,7 @@ class Food < Item
   end
 
   def to_s
-    "[Food at #{@square}, last seen #{time_since_last_seen} turns ago]"
+    "<Food at #{@square}, last seen #{time_since_last_seen} turns ago>"
   end
 end
 

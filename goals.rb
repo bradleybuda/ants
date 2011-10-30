@@ -140,7 +140,7 @@ class Defend < NextToItem
   end
 
   def to_s
-    "<Goal: defend #{@point_of_interest} from #{@square}>"
+    "<Goal: defend #{@item} from #{@square}>"
   end
 end
 
@@ -158,7 +158,7 @@ class Eat < NextToItem
   end
 
   def to_s
-    "<Goal: eat food at #{@point_of_interest} from #{@square}>"
+    "<Goal: eat #{@item} from #{@square}>"
   end
 end
 

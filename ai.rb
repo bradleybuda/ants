@@ -62,8 +62,8 @@ class AI
   end
 
   # Turn logic. If setup wasn't yet called, it will call it (and yield the block in it once).
-  def run &b # :yields: self
-    setup &b if !@did_setup
+  def run(&b) # :yields: self
+    setup(&b) if !@did_setup
 
     over = false
     until over
@@ -181,14 +181,14 @@ class AI
           if ant.nil?
             if square.has_hill? && square.item.mine?
               ant = Ant.new(square)
-              log "new ant has id #{ant.id}"
+              log "Sensed new #{ant}"
             else
               # maybe a newborn ant, but I haven't received the hill message yet?
               # it looks like hill messages always come first, but that may not be guaranteed
               raise "[BUG] no record of my ant at #{square}"
             end
           else
-            log "rediscovered ant #{ant.id} at #{square}"
+            log "Sensed exisiting #{ant}"
           end
 
           ant.die! unless alive
