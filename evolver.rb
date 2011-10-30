@@ -1,11 +1,12 @@
 #!/usr/bin/env ruby
 
 require 'active_support/core_ext'
+require 'open3'
 require './params_matrix.rb'
 
 class Chromosome
   BYTE_LENGTH = 64
-  MAX_TURNS = 300
+  MAX_TURNS = 1_000
 
   attr_reader :data
 
@@ -27,7 +28,9 @@ class Chromosome
     playgame = "/Users/brad/src/ants-tools/playgame.py"
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
-    data_file = "/tmp/matrix-#{rand(100_000_000)}"
+    data_file = "/tmp/matrix_#{rand(100_000_000)}"
+    log_dir = "#{data_file}_logs"
+    html = "#{log_dir}/game.html"
     opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
 
     data.write(File.open(data_file, 'w'))
@@ -41,14 +44,17 @@ class Chromosome
     scores = []
 
     maps.each do |map|
-      cmd = "#{playgame} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
-      result = `#{cmd}`
-      STDERR.puts result
+      cmd = "#{playgame} -R -S -I -O -E --html=#{html} --log_dir #{log_dir} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+      STDERR.puts "Running: #{cmd}"
+      out, err, status = Open3.capture3(cmd)
+      STDERR.puts "Status: #{status}"
+      STDERR.puts "Erorrs:\n\n#{err}" unless err.empty?
+      raise "Failed to run #{cmd}" unless status.success?
 
-      result =~ /^score (\d+) (\d+)$/
+      out =~ /^score (\d+) (\d+)$/
       my_score = $1.to_i
       opponent_score = $2.to_i
-      result =~ /^playerturns (\d+)/
+      out =~ /^playerturns (\d+)/
       turns = $1.to_i
 
       puts [map, my_score, opponent_score, turns].inspect
@@ -117,14 +123,15 @@ if __FILE__ == $0
     work_queue = population.dup
     mutex = Mutex.new
 
-    workers = Array.new(6) do |i|
+    workers = Array.new(4) do |i|
       Thread.new do
         loop do
+          sleep(rand * 2) # jitter to make log output cleaner
           item = nil
           mutex.synchronize { item = work_queue.shift }
           break unless item
 
-          STDERR.puts "[#{i}] Working on item"
+          STDERR.puts "[#{i}] Working on #{item}"
           item.fitness(player_seed, engine_seed) # callee will cache this
         end
         STDERR.puts "[#{i}] Done working"
