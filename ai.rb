@@ -65,16 +65,18 @@ class AI
   def run &b # :yields: self
     setup &b if !@did_setup
 
-    over=false
+    over = false
     until over
       GC.disable
 
       over = read_turn
 
-      yield self
+      if !over
+        yield self
 
-      @stdout.puts 'go'
-      @stdout.flush
+        @stdout.puts 'go'
+        @stdout.flush
+      end
 
       GC.enable
       GC.start
@@ -119,7 +121,7 @@ class AI
     rd=@stdin.gets.strip
 
     if rd=='end'
-      @turn_number=:game_over
+      #@turn_number=:game_over
 
       rd=@stdin.gets.strip
       _, players = *rd.match(/\Aplayers (\d+)\Z/)
