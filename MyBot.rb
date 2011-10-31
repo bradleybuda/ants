@@ -121,5 +121,6 @@ AI.instance.run do |ai|
     end
   end
 
+  log "No more ants to move, done with turn"
   Plug.disable! # all ants moved within time budget, so allow spawning again
 end
