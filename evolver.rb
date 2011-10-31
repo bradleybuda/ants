@@ -19,13 +19,29 @@ class Chromosome
     @_fitness = {}
   end
 
-  # Fitness is memoized across generations. If we vary the fitness
-  # function over time, need to revisit this.
-  def fitness(player_seed, engine_seed)
-    @_fitness[[player_seed, engine_seed]] ||= calculate_fitness(player_seed, engine_seed)
+  def fitness(player_seed, engine_seed, maps)
+    # Score is unweighted average share of total available
+    # points. This normalizes difference between maps that have
+    # different numbers of available points.
+    scores = []
+    maps.each do |map|
+      my_score, opponent_score, turns = calculate_fitness(player_seed, engine_seed, map)
+
+      scores << my_score.to_f / (my_score + opponent_score)
+    end
+
+    # higher is better
+    puts scores.inspect
+    scores.inject(&:+) / scores.size
   end
 
-  def calculate_fitness(player_seed, engine_seed)
+  # Fitness is memoized across generations. If we vary the fitness
+  # function over time, need to revisit this.
+  def calculate_fitness(player_seed, engine_seed, map)
+    @_fitness[[player_seed, engine_seed, map]] ||= calculate_fitness!(player_seed, engine_seed, map)
+  end
+
+  def calculate_fitness!(player_seed, engine_seed, map)
     playgame = "/Users/brad/src/ants-tools/playgame.py"
     ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
     bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
@@ -36,36 +52,22 @@ class Chromosome
 
     data.write(File.open(data_file, 'w'))
 
-    # play 1-1 vs a CPU on every 2-player map and see how we do
-    maps = Dir["/Users/brad/src/ants-tools/maps/**/*_02p_*.map"]
+    cmd = "#{playgame} -R -S -I -O -E --html=#{html} --log_dir #{log_dir} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
+    STDERR.puts "Running: #{cmd}"
+    out, err, status = Open3.capture3(cmd)
+    STDERR.puts "Status: #{status}"
+    STDERR.puts "Erorrs:\n\n#{err}" unless err.empty?
+    raise "Failed to run #{cmd}" unless status.success?
 
-    # Score is unweighted average share of total available
-    # points. This normalizes difference between maps that have
-    # different numbers of available points.
-    scores = []
+    out =~ /^score (\d+) (\d+)$/
+    my_score = $1.to_i
+    opponent_score = $2.to_i
+    out =~ /^playerturns (\d+)/
+    turns = $1.to_i
 
-    maps.each do |map|
-      cmd = "#{playgame} -R -S -I -O -E --html=#{html} --log_dir #{log_dir} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
-      STDERR.puts "Running: #{cmd}"
-      out, err, status = Open3.capture3(cmd)
-      STDERR.puts "Status: #{status}"
-      STDERR.puts "Erorrs:\n\n#{err}" unless err.empty?
-      raise "Failed to run #{cmd}" unless status.success?
-
-      out =~ /^score (\d+) (\d+)$/
-      my_score = $1.to_i
-      opponent_score = $2.to_i
-      out =~ /^playerturns (\d+)/
-      turns = $1.to_i
-
-      puts [map, my_score, opponent_score, turns].inspect
-
-      scores << my_score.to_f / (my_score + opponent_score)
-    end
-
-    # higher is better
-    puts scores.inspect
-    scores.inject(&:+) / scores.size
+    result = [my_score, opponent_score, turns]
+    puts result.inspect
+    result
   end
 
   def mutation
@@ -114,14 +116,18 @@ if __FILE__ == $0
   population = Array.new(10) { Chromosome.new }
   ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
 
+  # play 1-1 vs a CPU on every 2-player map and see how we do
+  maps = Dir["/Users/brad/src/ants-tools/maps/**/*_02p_*.map"]
+
   loop do
     player_seed = rand(1_000_000)
     engine_seed = rand(1_000_000)
 
     puts "Starting generation #{generation} with population #{population.size}"
 
-    # force each chromosome to compute fitness, 3-at-a-time
-    work_queue = population.dup
+    # force each chromosome to compute fitness in parallel
+    work_queue = []
+    population.each { |c| maps.each { |m| work_queue << [c, m] } }
     mutex = Mutex.new
 
     workers = Array.new(4) do |i|
@@ -133,8 +139,10 @@ if __FILE__ == $0
           break unless item
 
           STDERR.puts "[#{i}] Working on #{item}"
-          item.fitness(player_seed, engine_seed) # callee will cache this
+          chromosome, map = item
+          chromosome.calculate_fitness(player_seed, engine_seed, map) # callee will cache this
         end
+
         STDERR.puts "[#{i}] Done working"
       end
     end
@@ -142,8 +150,8 @@ if __FILE__ == $0
     workers.each(&:join)
 
     # Join the results
-    ranked = population.sort_by { |c| c.fitness(player_seed, engine_seed) }.reverse
-    puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed) }.inspect}"
+    ranked = population.sort_by { |c| c.fitness(player_seed, engine_seed, maps) }.reverse
+    puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed, maps) }.inspect}"
 
     # Save the winner
     ranked.first.data.write(File.open("best-#{Process.pid}-#{generation}", "w"))
