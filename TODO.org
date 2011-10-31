@@ -44,3 +44,4 @@ Should it always be lower? How to incorporate escort's own column in the priorit
 * TODO better capture state of dead ally / enemy
 * TODO chokepoint goal - defend a point with few land squares within the fight radius (and high connectivity?)
 maybe just look for a 2x1 or 3x1 with water on either side
+* TODO evolver runs on EMR - knows how to check out code, run it, send result back, etc
