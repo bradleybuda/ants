@@ -4,6 +4,7 @@ class Stats
 
     non_water = observed = visited = food = my_ants = enemy_ants = my_hills = enemy_hills = 0.0
 
+    # TODO don't loop over all squares
     Square.all.each do |square|
       non_water += 1
       observed += 1 if square.observed?
@@ -27,6 +28,7 @@ class Stats
     @enemy_ants = total_space / (enemy_ants + 1)
     @my_hills = total_space / (my_hills + 1)
     @enemy_hills = total_space / (enemy_hills + 1)
+    # TODO enemy count
   end
 
   def to_a
