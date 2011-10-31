@@ -10,12 +10,12 @@ class Chromosome
 
   attr_reader :data
 
-  def initialize(data = nil)
-    @data = data || begin
-                      file = "/tmp/matrix-#{rand(100_000_000)}"
-                      `dd if=/dev/urandom of=#{file} bs=#{BYTE_LENGTH} count=1 2> /dev/null`
-                      ParamsMatrix.new(File.open(file))
-                    end
+  def initialize(matrix = nil)
+    @matrix = matrix || begin
+                          file = "/tmp/matrix-#{rand(100_000_000)}"
+                          `dd if=/dev/urandom of=#{file} bs=#{BYTE_LENGTH} count=1 2> /dev/null`
+                          ParamsMatrix.read(File.open(file))
+                        end
     @_fitness = {}
   end
 
@@ -50,7 +50,7 @@ class Chromosome
     html = "#{log_dir}/game.html"
     opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
 
-    data.write(File.open(data_file, 'w'))
+    ParamsMatrix.write(File.open(data_file, 'w'), @matrix)
 
     cmd = "#{playgame} -R -S -I -O -E --html=#{html} --log_dir #{log_dir} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
     STDERR.puts "Running: #{cmd}"
@@ -79,8 +79,8 @@ class Chromosome
 
     raw = [bits_as_string].pack("B*")
     buffer = StringIO.new(raw)
-    data = ParamsMatrix.new(buffer)
-    Chromosome.new(data)
+    matrix = ParamsMatrix.read(buffer)
+    Chromosome.new(matrix)
   end
 
   def crossover(other)
@@ -96,14 +96,14 @@ class Chromosome
       # TODO duplicate code
       raw = [bits_as_string].pack("B*")
       buffer = StringIO.new(raw)
-      data = ParamsMatrix.new(buffer)
-      Chromosome.new(data)
+      matrix = ParamsMatrix.read(buffer)
+      Chromosome.new(matrix)
     end
   end
 
   def bits_as_string
     buffer = StringIO.new
-    data.write(buffer)
+    ParamsMatrix.write(buffer, @matrix)
     s = buffer.string
     s.force_encoding("ASCII-8BIT")
     s.unpack("B*").first
@@ -154,7 +154,7 @@ if __FILE__ == $0
     puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed, maps) }.inspect}"
 
     # Save the winner
-    ranked.first.data.write(File.open("best-#{Process.pid}-#{generation}", "w"))
+    ParamsMatrix.write(File.open("best-#{Process.pid}-#{generation}", "w"), ranked.first.matrix)
 
     generation += 1
 

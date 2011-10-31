@@ -4,7 +4,7 @@ require 'singleton'
 class Goal
   NEARBY_THRESHOLD = 200
   CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
-  MATRIX = ParamsMatrix.new(File.open(ARGV[0] || 'matrix'))
+  MATRIX = ParamsMatrix.read(File.open(ARGV[0] || 'matrix'))
 
   def self.all
     CONCRETE_GOALS.inject([]) { |acc, klass| Module.const_get(klass).all + acc }
@@ -12,7 +12,7 @@ class Goal
 
   def self.stats=(stats)
     @@stats = stats
-    @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX.to_priorities(stats.to_vector))]
+    @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX * stats.to_vector)]
   end
 
   def self.pick(ant, goals)
