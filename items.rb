@@ -8,10 +8,11 @@ class Item
     @@all
   end
 
-  def initialize(square, viewradius2)
+  def initialize(square)
     @square = square
     @square.item = self
-    @observable_from = Square.all.find_all { |other| @square.visible(other, viewradius2) }
+    # TODO make this faster using the visibility offset mask?
+    @observable_from = Square.all.find_all { |other| @square.visible(other) }
     @@all << self
 
     sense!
@@ -47,8 +48,8 @@ class Hill < Item
     Item.all.find_all { |i| i.kind_of?(Hill) }
   end
 
-  def initialize(owner, square, viewradius2)
-    super(square, viewradius2)
+  def initialize(owner, square)
+    super(square)
     @owner = owner
   end
 
@@ -72,6 +73,23 @@ class Food < Item
 
   def to_s
     "<Food at #{@square}, last seen #{time_since_last_seen} turns ago>"
+  end
+end
+
+# a moving item, which has a somewhat different model
+# we don't try to do any "motion tracking" on enemies - just assume they're all new each turn
+class EnemyAnt < Item
+  def self.all
+    Item.all.find_all { |i| i.kind_of?(EnemyAnt) }
+  end
+
+  def initialize(owner, square)
+    super(square)
+    @owner = owner
+  end
+
+  def to_s
+    "<Enemy ant at #{@square}, last seen #{time_since_last_seen} turns ago>"
   end
 end
 

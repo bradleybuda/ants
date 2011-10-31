@@ -9,8 +9,6 @@ require 'goals.rb'
 require 'log.rb'
 require 'square.rb'
 
-require 'set'
-
 module Enumerable
   def rand
     sort_by { Kernel.rand }.first
@@ -32,7 +30,7 @@ AI.instance.run do |ai|
 
   # Update map visibility
   log "Updating visible squares for #{living.count} ants"
-  updated = living.inject(0) { |total, ant| total + ant.square.visit!(ai.viewradius2) }
+  updated = living.inject(0) { |total, ant| total + ant.square.visit! }
   log "Updated visibility of #{updated} squares"
 
   # Compute game statistics for weighting model

@@ -11,7 +11,7 @@ class Stats
       food += 1 if square.has_food?
       enemy_hills += 1 if square.has_hill? && square.item.enemy?
       my_hills += 1 if square.has_hill? && square.item.mine?
-      enemy_ants += 1 if square.enemy_ant
+      enemy_ants += 1 if square.has_enemy_ant?
     end
 
     my_ants = Ant.living.count

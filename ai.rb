@@ -162,14 +162,14 @@ class AI
         if square.has_food?
           square.item.sense!
         else
-          food = Food.new(square, @viewradius2)
+          food = Food.new(square)
           log "Sensed #{food}"
         end
       when 'h'
         if square.has_hill?
           square.item.sense!
         else
-          hill = Hill.new(owner, square, @viewradius2)
+          hill = Hill.new(owner, square)
           log "Sensed #{hill}"
         end
       when 'a', 'd'
@@ -193,8 +193,12 @@ class AI
 
           ant.die! unless alive
         else
-          # we don'te try to remember enemy ants
-          square.enemy_ant = owner
+          if square.has_enemy_ant?
+            square.item.sense!
+          else
+            enemy_ant = EnemyAnt.new(owner, square)
+            log "Sensed #{enemy_ant}"
+          end
         end
       when 'r'
         # pass

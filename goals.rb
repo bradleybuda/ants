@@ -39,7 +39,7 @@ class Destination < Goal
   end
 
   def distance2(square)
-    square.distance2(@square) + 0.1 # prevent zero distance, which can cause ants to get stuck
+    square.distance2(@square)
   end
 
   def next_square(ant)
@@ -114,15 +114,20 @@ end
 
 class Kill < Destination
   def self.all
-    Square.all.find_all { |square| square.enemy_ant }.map { |square| Kill.new(square) }
+    EnemyAnt.all.map { |enemy_ant| Kill.new(enemy_ant) }
+  end
+
+  def initialize(enemy_ant)
+    super(enemy_ant.square)
+    @enemy_ant = enemy_ant
   end
 
   def valid?
-    super && @square.enemy_ant
+    @enemy_ant.exists?
   end
 
   def to_s
-    "<Goal: kill enemy ant at #{@square}>"
+    "<Goal: kill #{@enemy_ant}>"
   end
 end
 
@@ -240,7 +245,7 @@ class Wander < Goal
   end
 
   def distance2(square)
-    1.0 # put in a little anti-wander bias
+    0.0
   end
 
   def next_square(ant)

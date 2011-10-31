@@ -1,3 +1,5 @@
+require 'Set'
+
 # Represent a single field of the map. These fields are either land or
 # unknown - once a square is observed as water, it is deleted
 class Square
@@ -77,7 +79,6 @@ class Square
 
   attr_reader :row, :col
   attr_accessor :ant, :next_ant
-  attr_accessor :enemy_ant
   attr_accessor :item
 
   def initialize(row, col)
@@ -114,12 +115,18 @@ class Square
   end
 
   # Mark as visited and return the number of observed squares
-  def visit!(viewradius2)
+  def visit!
     return 0 if @visited
-    vis = visible_squares(viewradius2).reject(&:observed?)
-    vis.each(&:observe!)
     @visited = true
-    return vis.size
+
+    visible_squares.inject(0) do |observed_count, vis|
+      if vis.observed?
+        observed_count # no change
+      else
+        vis.observe!
+        observed_count + 1
+      end
+    end
   end
 
   def visited?
@@ -135,14 +142,14 @@ class Square
     @@observed << self
   end
 
-  def visible_squares(viewradius2)
+  def visible_squares
     @_visibles_squares ||= @@visibility_mask.map do |row_offset, col_offset|
       Square.at(@row + row_offset, @col + col_offset)
     end.compact
   end
 
-  def visible(square, viewradius2)
-    distance2(square) < viewradius2
+  def visible(square)
+    distance2(square) < @@viewradius2
   end
 
   def frontier?
@@ -155,6 +162,10 @@ class Square
 
   def has_hill?
     @item && @item.kind_of?(Hill)
+  end
+
+  def has_enemy_ant?
+    @item && @item.kind_of?(EnemyAnt)
   end
 
   def destroy!
@@ -250,7 +261,6 @@ class Square
   end
 
   def reset!
-    @enemy_ant = false
     @next_ant = @ant = nil
   end
 end
