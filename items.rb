@@ -1,6 +1,6 @@
 # a non-moving item (hill or food)
 class Item
-  @@all = []
+  @@all = [] # TODO would this be faster as a Set?
 
   attr_reader :square
 
@@ -11,8 +11,7 @@ class Item
   def initialize(square)
     @square = square
     @square.item = self
-    # TODO make this faster using the visibility offset mask?
-    @observable_from = Square.all.find_all { |other| @square.visible(other) }
+    @observable_from = @square.visible_squares
     @@all << self
 
     sense!
