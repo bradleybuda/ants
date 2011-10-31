@@ -12,8 +12,9 @@ class Chromosome
 
   def initialize(data = nil)
     @data = data || begin
-                      `dd if=/dev/urandom of=/tmp/matrix bs=#{BYTE_LENGTH} count=1 2> /dev/null`
-                      ParamsMatrix.new(File.open('/tmp/matrix'))
+                      file = "/tmp/matrix-#{rand(100_000_000)}"
+                      `dd if=/dev/urandom of=#{file} bs=#{BYTE_LENGTH} count=1 2> /dev/null`
+                      ParamsMatrix.new(File.open(file))
                     end
     @_fitness = {}
   end
