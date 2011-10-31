@@ -22,12 +22,12 @@ can we use this same logic for hunting enemies?
 * DONE priority queue for ant movement - ants with most important / nearest goals get to go first in case we timeout
 * DONE more aggressive local timeout - don't let the server time us out
 * DONE GA algorithm doesn't seem to actually work
+* DONE index square types for destination generation
 * TODO patrol goal - go back to squares we haven't seen in a while
 * TODO make it faster
 * TODO avenge goal - head to dead ally
 * TODO overrun goal - head to dead enemy
 * TODO limit goal pursuit time - cache only a partial route then reacquire goal
-* IN_PROGRESS index square types for destination generation
 * TODO limit number of ants that can pursue a goal? i.e. don't have everyone chase the same food
 * TODO cache long-lived routes? i.e. route to enemy hill
 * TODO ants move as groups / formations
@@ -40,8 +40,6 @@ this can be a "smarter escort" goal
 * TODO escort any goal, including escorts. don't think there's a real risk of cycles here
 * TODO escort priority is a function of escortee's priority
 Should it always be lower? How to incorporate escort's own column in the priority matrix?
-
-
 * TODO shadow goal - move in formation with another adjacent ant
 * TODO better capture state of dead ally / enemy
 * TODO chokepoint goal - defend a point with few land squares within the fight radius (and high connectivity?)
