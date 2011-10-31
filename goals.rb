@@ -12,7 +12,7 @@ class Goal
 
   def self.stats=(stats)
     @@stats = stats
-    @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX.to_priorities(stats.to_a))]
+    @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX.to_priorities(stats.to_vector))]
   end
 
   def self.pick(ant, goals)

@@ -1,3 +1,5 @@
+require 'matrix'
+
 class Stats
   def initialize(ai)
     total_space = (ai.rows * ai.cols).to_f
@@ -31,7 +33,7 @@ class Stats
     # TODO enemy count
   end
 
-  def to_a
-    [@water, @observed, @visited, @food, @my_ants, @enemy_ants, @my_hills, @enemy_hills]
+  def to_vector
+    Vector[@water, @observed, @visited, @food, @my_ants, @enemy_ants, @my_hills, @enemy_hills]
   end
 end

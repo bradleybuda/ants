@@ -1,24 +1,27 @@
+require 'matrix'
+
 class ParamsMatrix
+  ROWS = 8
+  COLS = 8
+
   def initialize(io)
     io.binmode
     packed = io.read
-    @matrix = packed.unpack("C*")
+    data = packed.unpack("C*")
+    @matrix = Matrix.build(ROWS, COLS) { data.shift }
     io.close
   end
 
   def write(io)
     io.binmode
-    packed = @matrix.pack("C*")
+    data = []
+    @matrix.each { |elt| data << elt }
+    packed = data.pack("C*")
     io.write(packed)
     io.close
   end
 
-  def to_priorities(stats)
-    weights_size = @matrix.size / stats.size
-    vectors = @matrix.each_slice(stats.size)
-
-    Array.new(weights_size) do |i|
-      stats.zip(vectors.next).inject(0) { |sum, (x, y)| sum + x*y }
-    end
+  def to_priorities(stats_vector)
+    @matrix * stats_vector
   end
 end
