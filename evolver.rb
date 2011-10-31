@@ -8,7 +8,7 @@ class Chromosome
   BYTE_LENGTH = 64
   MAX_TURNS = 1_000
 
-  attr_reader :data
+  attr_reader :matrix
 
   def initialize(matrix = nil)
     @matrix = matrix || begin
