@@ -1,4 +1,4 @@
-require 'Set'
+require 'set'
 
 # Represent a single field of the map. These fields are either land or
 # unknown - once a square is observed as water, it is deleted
