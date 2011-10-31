@@ -27,7 +27,13 @@ class AI
 
     @did_setup = false
 
-    @stdin = STDIN
+    @stdin = if File.exists?('debugger_input')
+               STDERR.puts "Using debugger input!"
+               File.open('debugger_input')
+             else
+               STDIN
+             end
+
     @stdout = STDOUT
   end
 
