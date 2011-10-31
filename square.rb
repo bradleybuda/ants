@@ -143,9 +143,12 @@ class Square
   end
 
   def visible_squares
-    @_visibles_squares ||= @@visibility_mask.map do |row_offset, col_offset|
+    @_visible_squares ||= @@visibility_mask.map do |row_offset, col_offset|
       Square.at(@row + row_offset, @col + col_offset)
     end.compact
+
+    # Can't cache which ones are non-nil
+    @_visible_squares.find_all { |s| Square.at(s.row, s.col) }
   end
 
   def visible(square)
@@ -174,6 +177,7 @@ class Square
     end
 
     @@index[Square.position_to_index(@row, @col)] = nil
+    @@observed.delete(self)
   end
 
   def remove_dead_neighbor(dead_neighbor)
