@@ -184,20 +184,25 @@ class Plug < Destination
 
   # TODO only one ant should attempt to execute the plug goal
   def self.all
-    if @@plug_active
-      Square.all.find_all { |square| square.hill && square.hill == 0 }.map { |square| Plug.new(square) }
+    if Plug.active?
+      Hill.all.find_all(&:mine?).map { |hill| Plug.new(hill) }
     else
       []
     end
   end
 
+  def initialize(hill)
+    super(hill.square)
+    @hill = hill
+  end
+
   def valid?
     # TODO invalid if another ant is on the spot
-    @@plug_active && @square.hill && @square.hill == 0
+    @@plug_active && @hill.exists?
   end
 
   def to_s
-    "<Goal: prevent spawning ants from own hill at #{@square}>"
+    "<Goal: prevent spawning ants at #{@hill}>"
   end
 end
 
