@@ -211,7 +211,11 @@ class Escort < Goal
   CAN_ESCORT = [Eat, Explore, Raze, Kill]
 
   def self.all
-    Ant.living.find_all { |ant| ant.goal && ant.goal.valid? && CAN_ESCORT.any? { |goal| ant.goal.kind_of?(goal) } }.map { |ant| Escort.new(ant) }
+    Ant.living.find_all { |ant| Escort.ant_is_escortable?(ant)  }.map { |ant| Escort.new(ant) }
+  end
+
+  def self.ant_is_escortable?(ant)
+    ant.alive? && ant.goal && ant.goal.valid? && CAN_ESCORT.any? { |goal| ant.goal.kind_of?(goal) }
   end
 
   def initialize(ant)
@@ -219,7 +223,7 @@ class Escort < Goal
   end
 
   def valid?
-    @ant.alive? && @ant.goal.valid? && CAN_ESCORT.any? { |goal| @ant.goal === goal }
+    Escort.ant_is_escortable?(@ant)
   end
 
   def distance2(square)
