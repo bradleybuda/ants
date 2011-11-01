@@ -19,55 +19,22 @@ class Chromosome
     @_fitness = {}
   end
 
-  def fitness(player_seed, engine_seed, maps)
-    # Score is unweighted average share of total available
-    # points. This normalizes difference between maps that have
-    # different numbers of available points.
-    scores = []
-    maps.each do |map|
-      my_score, opponent_score, turns = calculate_fitness(player_seed, engine_seed, map)
+  def fitness_command(revision, player_seed, engine_seed, map)
+    home      = "/home/hadoop"
+    python    = "/opt/Python-2.7.2/bin/python"
+    tools     = "/opt/aichallenge/ants"
+    ruby      = "/opt/ruby-1.9.2-p0/bin/ruby"
+    scorefile = "/tmp/score-#{rand(100_000_000)}"
+    data      = ParamsMatrix.to_base64(@matrix)
 
-      scores << my_score.to_f / (my_score + opponent_score)
-    end
-
-    # higher is better
-    puts scores.inspect
-    scores.inject(&:+) / scores.size
-  end
-
-  # Fitness is memoized across generations. If we vary the fitness
-  # function over time, need to revisit this.
-  def calculate_fitness(player_seed, engine_seed, map)
-    @_fitness[[player_seed, engine_seed, map]] ||= calculate_fitness!(player_seed, engine_seed, map)
-  end
-
-  def calculate_fitness!(player_seed, engine_seed, map)
-    playgame = "/Users/brad/src/ants-tools/playgame.py"
-    ruby = "/Users/brad/.rvm/rubies/ruby-1.9.2-p180/bin/ruby"
-    bot = File.expand_path(File.dirname(__FILE__)) + "/MyBot.rb"
-    data_file = "/tmp/matrix_#{rand(100_000_000)}"
-    log_dir = "#{data_file}_logs"
-    html = "#{log_dir}/game.html"
-    opponent = "python /Users/brad/src/ants-tools/sample_bots/python/HunterBot.py"
-
-    ParamsMatrix.write(File.open(data_file, 'w'), @matrix)
-
-    cmd = "#{playgame} -R -S -I -O -E --html=#{html} --log_dir #{log_dir} --player_seed #{player_seed} --engine_seed #{engine_seed} --fill --verbose --nolaunch --turns #{MAX_TURNS} --map_file #{map} '#{ruby} #{bot} #{data_file}' '#{opponent}'"
-    STDERR.puts "Running: #{cmd}"
-    out, err, status = Open3.capture3(cmd)
-    STDERR.puts "Status: #{status}"
-    STDERR.puts "Erorrs:\n\n#{err}" unless err.empty?
-    raise "Failed to run #{cmd}" unless status.success?
-
-    out =~ /^score (\d+) (\d+)$/
-    my_score = $1.to_i
-    opponent_score = $2.to_i
-    out =~ /^playerturns (\d+)/
-    turns = $1.to_i
-
-    result = [my_score, opponent_score, turns]
-    puts result.inspect
-    result
+    [
+     "cd #{home}/ants",
+     "git checkout master",
+     "git pull --rebase",
+     "git checkout #{revision}",
+     "#{python} #{tools}/playgame.py --player_seed #{player_seed} --engine_seed #{engine_seed} --turns #{MAX_TURNS} --turntime 30000 --fill --verbose -e --map_file #{tools}/maps/#{map} \"#{ruby} #{home}/ants/MyBot.rb '#{data}'\" \"#{python} #{tools}/dist/sample_bots/python/GreedyBot.py\" | grep -E '^score' > #{scorefile}",
+     "echo '#{data}' #{revision} #{player_seed} #{engine_seed} #{map} `cat #{scorefile}`",
+    ].join(' && ')
   end
 
   def mutation
@@ -110,14 +77,13 @@ class Chromosome
   end
 end
 
+MAPS = %w(maze/maze_02p_01.map maze/maze_02p_02.map maze/maze_03p_01.map maze/maze_04p_01.map maze/maze_04p_02.map maze/maze_05p_01.map maze/maze_06p_01.map maze/maze_07p_01.map maze/maze_08p_01.map multi_hill_maze/maze_02p_01.map multi_hill_maze/maze_02p_02.map multi_hill_maze/maze_03p_01.map multi_hill_maze/maze_04p_01.map multi_hill_maze/maze_04p_02.map multi_hill_maze/maze_05p_01.map multi_hill_maze/maze_07p_01.map multi_hill_maze/maze_08p_01.map random_walk/random_walk_02p_01.map random_walk/random_walk_02p_02.map random_walk/random_walk_03p_01.map random_walk/random_walk_03p_02.map random_walk/random_walk_04p_01.map random_walk/random_walk_04p_02.map random_walk/random_walk_05p_01.map random_walk/random_walk_05p_02.map random_walk/random_walk_06p_01.map random_walk/random_walk_06p_02.map random_walk/random_walk_07p_01.map random_walk/random_walk_07p_02.map random_walk/random_walk_08p_01.map random_walk/random_walk_08p_02.map random_walk/random_walk_09p_01.map random_walk/random_walk_09p_02.map random_walk/random_walk_10p_01.map random_walk/random_walk_10p_02.map)
+
 # main
 if __FILE__ == $0
   generation = 0
   population = Array.new(10) { Chromosome.new }
   ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
-
-  # play 1-1 vs a CPU on every 2-player map and see how we do
-  maps = Dir["/Users/brad/src/ants-tools/maps/**/*_02p_*.map"]
 
   loop do
     player_seed = rand(1_000_000)
@@ -127,50 +93,35 @@ if __FILE__ == $0
 
     # force each chromosome to compute fitness in parallel
     work_queue = []
-    population.each { |c| maps.each { |m| work_queue << [c, m] } }
-    mutex = Mutex.new
+    population.each { |c| MAPS.each { |map| work_queue << c.fitness_command('master', player_seed, engine_seed, map) }}
 
-    workers = Array.new(4) do |i|
-      Thread.new do
-        loop do
-          sleep(rand * 2) # jitter to make log output cleaner
-          item = nil
-          mutex.synchronize { item = work_queue.shift }
-          break unless item
+    puts work_queue.join("\n")
+    break
 
-          STDERR.puts "[#{i}] Working on #{item}"
-          chromosome, map = item
-          chromosome.calculate_fitness(player_seed, engine_seed, map) # callee will cache this
-        end
-
-        STDERR.puts "[#{i}] Done working"
-      end
-    end
-
-    workers.each(&:join)
+    # TODO execute and gather results
 
     # Join the results
-    ranked = population.sort_by { |c| c.fitness(player_seed, engine_seed, maps) }.reverse
-    puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed, maps) }.inspect}"
+    #ranked = population.sort_by { |c| c.fitness(player_seed, engine_seed, maps) }.reverse
+    #puts "Fitness scores: #{ranked.map { |c| c.fitness(player_seed, engine_seed, maps) }.inspect}"
 
     # Save the winner
-    ParamsMatrix.write(File.open("best-#{Process.pid}-#{generation}", "w"), ranked.first.matrix)
+    #ParamsMatrix.write(File.open("best-#{Process.pid}-#{generation}", "w"), ranked.first.matrix)
 
-    generation += 1
+    #generation += 1
 
     # Create new generation from elite, mutants, crossovers, and randoms
-    new_population = [
-                      ranked.first,
-                      ranked.first.mutation,
-                      ranked.second.mutation.mutation,
-                      ranked.second.mutation.mutation.mutation,
-                    ]
-    ranked.first(6).each_slice(2) do |mom, dad|
-      kids = mom.crossover(dad)
-      new_population += kids
-    end
+    #new_population = [
+    #                  ranked.first,
+    #                  ranked.first.mutation,
+    #                  ranked.second.mutation.mutation,
+    #                  ranked.second.mutation.mutation.mutation,
+    #                ]
+    #ranked.first(6).each_slice(2) do |mom, dad|
+    #  kids = mom.crossover(dad)
+    #  new_population += kids
+    #end
 
-    new_population += Array.new(2) { Chromosome.new }
-    population = new_population
+    #new_population += Array.new(2) { Chromosome.new }
+    #population = new_population
   end
 end
