@@ -186,8 +186,10 @@ class Square
   end
 
   def self.distance2(r1, c1, r2, c2)
-    dr = [(r1 - r2).abs, @@rows - (r1 - r2).abs].min
-    dc = [(c1 - c2).abs, @@cols - (c1 - c2).abs].min
+    rdelt = (r1 - r2).abs
+    cdelt = (c1 - c2).abs
+    dr = [rdelt, @@rows - rdelt].min
+    dc = [cdelt, @@cols - cdelt].min
     (dr**2 + dc**2)
   end
 
