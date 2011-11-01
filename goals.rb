@@ -24,7 +24,7 @@ class Goal
     load_matrix! unless @@matrix
 
     @@stats = stats
-    @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX * stats.to_vector)]
+    @@priorities = Hash[CONCRETE_GOALS.zip(@@matrix * stats.to_vector)]
   end
 
   def self.pick(ant, goals)
