@@ -4,13 +4,25 @@ require 'singleton'
 class Goal
   NEARBY_THRESHOLD = 200
   CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
-  MATRIX = ParamsMatrix.read(File.open(ARGV[0] || 'matrix'))
+
+  @@matrix = nil
 
   def self.all
     CONCRETE_GOALS.inject([]) { |acc, klass| Module.const_get(klass).all + acc }
   end
 
+  def self.load_matrix!
+    matrix_arg = ARGV[0] || 'matrix'
+    @@matrix = if File.exists?(matrix_arg)
+                 ParamsMatrix.read(File.open(matrix_arg))
+               else
+                 ParamsMatrix.from_base64(matrix_arg)
+               end
+  end
+
   def self.stats=(stats)
+    load_matrix! unless @@matrix
+
     @@stats = stats
     @@priorities = Hash[CONCRETE_GOALS.zip(MATRIX * stats.to_vector)]
   end
