@@ -1,13 +1,5 @@
-$:.unshift File.dirname($0)
-
-require 'ai.rb'
-require 'ant.rb'
-require 'items.rb'
-require 'stats.rb'
-require 'params_matrix.rb'
-require 'goals.rb'
-require 'log.rb'
-require 'square.rb'
+$:.unshift File.dirname(__FILE__)
+%w(ai ant items stats params_matrix goals log square).each { |lib| require lib }
 
 module Enumerable
   def rand
