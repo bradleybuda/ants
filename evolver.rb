@@ -19,7 +19,7 @@ class Chromosome
     @_fitness = {}
   end
 
-  def fitness_command(revision, player_seed, engine_seed, map)
+  def fitness_command(treeish, player_seed, engine_seed, map)
     home      = "/home/hadoop"
     python    = "/opt/Python-2.7.2/bin/python"
     tools     = "/opt/aichallenge/ants"
@@ -31,9 +31,9 @@ class Chromosome
      "cd #{home}/ants",
      "git checkout master",
      "git pull --rebase",
-     "git checkout #{revision}",
+     "git checkout #{treeish}",
      "#{python} #{tools}/playgame.py --player_seed #{player_seed} --engine_seed #{engine_seed} --turns #{MAX_TURNS} --turntime 30000 --fill --verbose -e --map_file #{tools}/maps/#{map} \"#{ruby} #{home}/ants/MyBot.rb '#{data}'\" \"#{python} #{tools}/dist/sample_bots/python/GreedyBot.py\" | grep -E '^score' > #{scorefile}",
-     "echo '#{data}' #{revision} #{player_seed} #{engine_seed} #{map} `cat #{scorefile}`",
+     "echo '#{data}' `git rev-parse HEAD` #{player_seed} #{engine_seed} #{map} `cat #{scorefile}`",
     ].join(' && ')
   end
 
