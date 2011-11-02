@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'active_support/core_ext'
+require 'aws/s3'
+require 'digest/sha1'
 require 'open3'
 require './params_matrix.rb'
 
@@ -77,13 +79,18 @@ class Chromosome
   end
 end
 
+INITIAL_POPULATION = 10
 MAPS = %w(maze/maze_02p_01.map maze/maze_02p_02.map maze/maze_03p_01.map maze/maze_04p_01.map maze/maze_04p_02.map maze/maze_05p_01.map maze/maze_06p_01.map maze/maze_07p_01.map maze/maze_08p_01.map multi_hill_maze/maze_02p_01.map multi_hill_maze/maze_02p_02.map multi_hill_maze/maze_03p_01.map multi_hill_maze/maze_04p_01.map multi_hill_maze/maze_04p_02.map multi_hill_maze/maze_05p_01.map multi_hill_maze/maze_07p_01.map multi_hill_maze/maze_08p_01.map random_walk/random_walk_02p_01.map random_walk/random_walk_02p_02.map random_walk/random_walk_03p_01.map random_walk/random_walk_03p_02.map random_walk/random_walk_04p_01.map random_walk/random_walk_04p_02.map random_walk/random_walk_05p_01.map random_walk/random_walk_05p_02.map random_walk/random_walk_06p_01.map random_walk/random_walk_06p_02.map random_walk/random_walk_07p_01.map random_walk/random_walk_07p_02.map random_walk/random_walk_08p_01.map random_walk/random_walk_08p_02.map random_walk/random_walk_09p_01.map random_walk/random_walk_09p_02.map random_walk/random_walk_10p_01.map random_walk/random_walk_10p_02.map)
+BUCKET = 'ant-chromosomes'
 
 # main
 if __FILE__ == $0
+  evolution = Time.now.to_i.to_s
   generation = 0
-  population = Array.new(10) { Chromosome.new }
+  population = Array.new(INITIAL_POPULATION) { Chromosome.new }
   ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
+
+  AWS::S3::Base.establish_connection! :access_key_id => ENV['AMAZON_ACCESS_KEY_ID'], :secret_access_key => ENV['AMAZON_SECRET_ACCESS_KEY']
 
   loop do
     player_seed = rand(1_000_000)
@@ -91,12 +98,19 @@ if __FILE__ == $0
 
     puts "Starting generation #{generation} with population #{population.size}"
 
-    # force each chromosome to compute fitness in parallel
-    work_queue = []
-    population.each { |c| MAPS.each { |map| work_queue << c.fitness_command('master', player_seed, engine_seed, map) }}
+    # for each chromosome and map, generate a work unit in s3
+    puts "Uploading work units to S3"
+    population.each do |chromosome|
+      MAPS.each do |map|
+        command = chromosome.fitness_command('master', player_seed, engine_seed, map)
+        command_digest = Digest::SHA1.hexdigest(command)
+        s3_path = "/evolutions/#{evolution}/generations/#{generation}/input/#{command_digest}.sh"
+        AWS::S3::S3Object.store(s3_path, command, BUCKET)
+      end
+    end
+    puts "Done uploading"
 
-    # TODO i may need to write these as one command per s3 object - don't think i can get hadoop to split input line-by-line
-    puts work_queue.join("\n")
+    puts "Starting job flow on work units"
     break
 
     # TODO execute and gather results
