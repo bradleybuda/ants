@@ -3,6 +3,7 @@
 require 'active_support/core_ext'
 require 'aws/s3'
 require 'digest/sha1'
+require 'elasticity'
 require 'open3'
 require './params_matrix.rb'
 
@@ -90,13 +91,17 @@ if __FILE__ == $0
   population = Array.new(INITIAL_POPULATION) { Chromosome.new }
   ARGV.each { |file| population.unshift Chromosome.new(ParamsMatrix.new(File.open(file))) }
 
-  AWS::S3::Base.establish_connection! :access_key_id => ENV['AMAZON_ACCESS_KEY_ID'], :secret_access_key => ENV['AMAZON_SECRET_ACCESS_KEY']
+  AWS::S3::Base.establish_connection! :access_key_id => ENV['AWS_ACCESS_KEY_ID'], :secret_access_key => ENV['AWS_SECRET_KEY']
+  emr = Elasticity::EMR.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_KEY"], :region => 'us-west-1')
 
   loop do
     player_seed = rand(1_000_000)
     engine_seed = rand(1_000_000)
 
     puts "Starting generation #{generation} with population #{population.size}"
+    generation_path = "/evolutions/#{evolution}/generations/#{generation}"
+    generation_input = "#{generation_path}/input"
+    generation_output = "#{generation_path}/output"
 
     # for each chromosome and map, generate a work unit in s3
     puts "Uploading work units to S3"
@@ -104,13 +109,67 @@ if __FILE__ == $0
       MAPS.each do |map|
         command = chromosome.fitness_command('master', player_seed, engine_seed, map)
         command_digest = Digest::SHA1.hexdigest(command)
-        s3_path = "/evolutions/#{evolution}/generations/#{generation}/input/#{command_digest}.sh"
+        s3_path = "#{generation_input}/#{command_digest}.sh"
         AWS::S3::S3Object.store(s3_path, command, BUCKET)
       end
     end
     puts "Done uploading"
 
-    puts "Starting job flow on work units"
+
+    puts "Checking for an existing job flow"
+    waiting = emr.describe_jobflows.find { |jf| jf.state == 'WAITING' }
+    jobflow_id = nil
+    if waiting.nil?
+      puts "No existing job flow, starting a new one"
+
+      flow_config = {
+        :name => "Evolution #{evolution}",
+        :log_uri => 's3n://ant-chromosomes/logs/',
+        :bootstrap_actions => [
+                               :name => 'Git, Ruby, Python, Code',
+                               :script_bootstrap_action => {
+                                 :path => 's3n://ant-chromosomes/bootstrap/install_ruby_and_git.sh',
+                               }
+                              ],
+        :instances => {
+          :hadoop_version => '0.20',
+          :keep_job_flow_alive_when_no_steps => true,
+          :ec2_key_name => 'mapreduce-west',
+          :instance_count => 2,
+          :master_instance_type => 'm1.small',
+          :slave_instance_type => 'm1.small',
+        },
+        :steps => [],
+      }
+
+      jobflow_id = emr.run_job_flow(flow_config)
+      puts "Started new job flow #{jobflow_id}"
+    else
+      jobflow_id = waiting.jobflow_id
+      puts "Reusing job flow #{jobflow_id}"
+    end
+
+    puts "Adding a new step to #{jobflow_id}"
+    step_config = {
+      :name => "Generation #{generation}",
+      :action_on_failure => 'CANCEL_AND_WAIT',
+      :hadoop_jar_step => {
+        :jar => '/home/hadoop/contrib/streaming/hadoop-streaming.jar',
+        :args => [
+                  '-input'  , "s3n://ant-chromosomes#{generation_input}/*",
+                  '-output' , "s3n://ant-chromosomes#{generation_output}",
+                  '-mapper' , '/bin/sh',
+                  '-reducer', '/bin/cat',
+                 ],
+      },
+    }
+
+    emr.add_jobflow_steps(jobflow_id, :steps => [step_config])
+
+    # Burst up
+    # instance_group_config = { :instance_count => 20, :instance_role => "TASK", :instance_type => 'c1.xlarge', :market => 'SPOT', :bid_price => '0.35', :name => 'Burst Capacity' }
+    # emr.add_instance_groups('jobflow_id', [instance_group_config])
+
     break
 
     # TODO execute and gather results
