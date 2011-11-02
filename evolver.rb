@@ -95,6 +95,7 @@ if __FILE__ == $0
     work_queue = []
     population.each { |c| MAPS.each { |map| work_queue << c.fitness_command('master', player_seed, engine_seed, map) }}
 
+    # TODO i may need to write these as one command per s3 object - don't think i can get hadoop to split input line-by-line
     puts work_queue.join("\n")
     break
 
