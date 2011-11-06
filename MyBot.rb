@@ -42,7 +42,9 @@ AI.instance.run do |ai|
 
   # Breadth-first search from all goals
   visited = Set.new
-  queue = goals.map { |goal| { :square => goal.square, :goal => goal, :route => [] } }
+  queue = goals.map { |goal| [goal.square, goal, []] }
+  search_radius = 0; search_count = 0 # instrument how far we were able to search
+
   TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.7) do
     # visit the first node in the queue and unpack it
     elt = queue.shift
@@ -52,10 +54,11 @@ AI.instance.run do |ai|
       next
     end
 
-    square = elt[:square]
-    goal = elt[:goal]
-    route = elt[:route]
+    square, goal, route = *elt
+    search_radius = route.size
+    search_count += 1
 
+    # TODO keep the marker on the square instead of in the master set?
     visited << [goal, square]
 
     # Adjust ant orders if necessary
@@ -80,10 +83,11 @@ AI.instance.run do |ai|
     # put neighboring squares at end of search queue
     square.neighbors.each do |neighbor|
       next if visited.member?([goal, neighbor])
-      # TODO I don't think we need to track the whole route, just a pointer to next
-      queue.push({ :square => neighbor, :goal => goal, :route => [square] + route })
+      queue.push([neighbor, goal, [square] + route])
     end
   end
+
+  log "BFS: done searching. Search count was #{search_count}, radius was at least #{search_radius - 1} squares from goals"
 
   # Issue orders for each ant's best-available goal
   stuck_once = []
