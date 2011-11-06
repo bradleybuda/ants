@@ -31,9 +31,13 @@ AI.instance.run do |ai|
   goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
   log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
-  # Purge any invalid goals
+  # Purge all previous goals
+  # TODO cache routes and goals
   ants_to_move.each do |ant|
-    ant.goal = Wander.instance unless ant.goal.valid?
+    if ant.goal && !ant.goal.valid?
+      ant.goal = nil
+      ant.route = []
+    end
   end
 
   # Breadth-first search from all goals
@@ -59,12 +63,14 @@ AI.instance.run do |ai|
       log "BFS: hit #{ant} with #{goal}"
       if ant.goal.nil?
         log "BFS: #{ant} had no goal, assigning it this one"
-        ant.goal = goal # TODO assign route as well
+        ant.goal = goal
+        ant.route = route
       else
         log "BFS: #{ant} already has #{ant.goal}, comparing priorities"
         if ant.goal.priority < goal.priority
           log "BFS: new #{goal} is higher priority, giving it to #{ant}"
           ant.goal = goal
+          ant.route = route
         else
           log "BFS: existing #{ant.goal} is higher priority, no change to goal"
         end
@@ -74,6 +80,7 @@ AI.instance.run do |ai|
     # put neighboring squares at end of search queue
     square.neighbors.each do |neighbor|
       next if visited.member?([goal, neighbor])
+      # TODO I don't think we need to track the whole route, just a pointer to next
       queue.push({ :square => neighbor, :goal => goal, :route => [square] + route })
     end
   end
@@ -90,32 +97,14 @@ AI.instance.run do |ai|
 
     log "Next ant in queue is #{ant}. After this we have #{ants_to_move.size} to move."
 
-    # delay orders if we're stuck
-    # TODO i don't think we need this code, we have the same logic below
-    # TODO deduplicate this - square should have an unblocked_neighbors method or something
+    route = ant.route
     valid = ant.square.neighbors - ant.square.blacklist
-    if valid.empty?
-      if stuck_once.member?(ant)
-        log "#{ant} is stuck again, abandoning"
-      else
-        log "#{ant} is stuck, delaying orders until later"
-        ants_to_move.push(ant)
-        stuck_once << ant
-      end
 
-      next
-    end
-
-    log "#{ant} wants to #{ant.goal} and has valid moves to #{valid.to_a}"
-    next_square = ant.goal.next_square(ant) # TODO use precomputed route
-
-    log "#{ant} wants to go to #{next_square}"
-
-    if next_square == ant.square
+    if route.empty?
       log "#{ant} will stay put to execute #{ant.goal}"
-    elsif valid.member?(next_square)
-      log "#{ant} will move to #{next_square}"
-      ant.order_to next_square
+    elsif valid.member?(route.first)
+      log "#{ant} will move to #{route.first}"
+      ant.order_to route.shift
     else
       log "#{ant} is stuck, delaying orders until later"
       ants_to_move.push(ant)

@@ -2,12 +2,12 @@ require 'singleton'
 
 # abstract goals
 class Goal
-  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
+  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug]
 
   @@matrix = nil
 
   def self.all
-    (CONCRETE_GOALS - [:Wander]).inject([]) { |acc, klass| Module.const_get(klass).all + acc }
+    CONCRETE_GOALS.inject([]) { |acc, klass| Module.const_get(klass).all + acc }
   end
 
   def self.load_matrix!
@@ -37,7 +37,6 @@ class Destination < Goal
 
   def initialize(square)
     @square = square
-    @route_cache = {} # ant => route
   end
 
   def valid?
@@ -46,29 +45,6 @@ class Destination < Goal
 
   def distance2(square)
     square.distance2(@square)
-  end
-
-  def next_square(ant)
-    return nil if ant.square == @square # arrived
-
-    if (!@route_cache[ant] || ant.square.blacklist.member?(@route_cache[ant].first) || has_water?(@route_cache[ant]))
-      log "Generating new route for #{ant} to #{@square} (cache missing or invalid)"
-
-      route = ant.square.route_to(@square)
-
-      if route.nil?
-        log "No route to destination"
-        return nil
-      end
-
-      @route_cache[ant] = route
-    end
-
-    @route_cache[ant].shift
-  end
-
-  def has_water?(route)
-    route.any? { |square| Square.at(square.row, square.col).nil? }
   end
 end
 
@@ -85,6 +61,7 @@ end
 
 # concrete goals
 
+# TODO i think this is broken in the DFS for some reason
 class Explore < Destination
   def self.all
     Square.observed.find_all { |square| square.frontier? }.map { |square| Explore.new(square) }
@@ -225,6 +202,7 @@ class Escort < Goal
   end
 
   def initialize(ant)
+    super()
     @ant = ant
   end
 
@@ -250,33 +228,5 @@ class Escort < Goal
 
   def to_s
     "<Goal: escort #{@ant} executing #{@ant.goal}>"
-  end
-end
-
-class Wander < Goal
-  include Singleton
-
-  def self.all
-    [Wander.instance]
-  end
-
-  def valid?
-    true
-  end
-
-  def distance2(square)
-    0.0
-  end
-
-  def next_square(ant)
-    valid_squares = ant.square.neighbors - ant.square.blacklist
-
-    # give wander a bias toward open space
-    # not sure if this is a good policy or not
-    valid_squares.max_by { |square| square.neighbors.count * rand }
-  end
-
-  def to_s
-    "<Goal: wander randomly>"
   end
 end

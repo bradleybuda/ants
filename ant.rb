@@ -8,18 +8,18 @@ class Ant
   attr_reader :next_square
   attr_accessor :id
   attr_accessor :goal
+  attr_accessor :route
 
   def initialize(square)
     @square = @next_square = square
     @square.ant = self
     @square.next_ant = self
+    @route = []
 
     @id = @@next_ant_id
     @@next_ant_id += 1
 
     @@living << self
-
-    @goal = Wander.instance
   end
 
   def self.living

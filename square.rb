@@ -206,66 +206,6 @@ class Square
     Set.new(neighbors.find_all { |n| n.next_ant || n.has_food? })
   end
 
-  # A* from http://en.wikipedia.org/wiki/A*
-  def route_to(goal)
-    log "looking for route from #{self} to #{goal}"
-    return nil if blacklist.member?(goal)
-
-    closed_set = Set.new
-    open_set = Set.new([self])
-    came_from = {}
-
-    g_score = {self => 0}
-    h_score = {self => Math.sqrt(self.distance2(goal))}
-    f_score = {self => g_score[self] + h_score[self]}
-
-    until open_set.empty? do
-      x = open_set.sort_by { |o| f_score[o] }.first
-
-      if x == goal
-        path = reconstruct_path(came_from, goal)
-        path.shift
-        log "found path #{path.map { |s| [s.row, s.col] }}"
-        return path
-      end
-
-      open_set.delete(x)
-      closed_set.add(x)
-
-      (x.neighbors - blacklist).each do |y|
-        next if closed_set.member?(y)
-
-        tentative_g_score = g_score[x] + 1
-        tentative_is_better = nil
-        if !open_set.member?(y)
-          open_set.add(y)
-          tentative_is_better = true
-        elsif tentative_g_score < g_score[y]
-          tentative_is_better = true
-        else
-          tentative_is_better = false
-        end
-
-        if tentative_is_better
-          came_from[y] = x
-          g_score[y] = tentative_g_score
-          h_score[y] = Math.sqrt(y.distance2(goal))
-          f_score[y] = g_score[y] + h_score[y]
-        end
-      end
-    end
-
-    return nil # this should not ever happen, but it seems to occur with the test data
-  end
-
-  def reconstruct_path(came_from, current_node)
-    if came_from[current_node]
-      reconstruct_path(came_from, came_from[current_node]) + [current_node]
-    else
-      [current_node]
-    end
-  end
-
   def reset!
     @next_ant = @ant = nil
   end
