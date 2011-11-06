@@ -45,7 +45,7 @@ AI.instance.run do |ai|
   queue = goals.map { |goal| [goal.square, goal, []] }
   search_radius = 0; search_count = 0 # instrument how far we were able to search
 
-  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.7) do
+  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.8) do
     # visit the first node in the queue and unpack it
     elt = queue.shift
     if elt.nil?
@@ -82,6 +82,8 @@ AI.instance.run do |ai|
 
     # put neighboring squares at end of search queue
     square.neighbors.each do |neighbor|
+      # I don't know if this is a good idea, to avoid searching never-observed squares
+      next if !neighbor.observed?
       next if visited.member?([goal, neighbor])
       queue.push([neighbor, goal, [square] + route])
     end
