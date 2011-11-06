@@ -18,6 +18,8 @@ class Ant
     @@next_ant_id += 1
 
     @@living << self
+
+    @goal = Wander.instance
   end
 
   def self.living

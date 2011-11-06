@@ -2,13 +2,12 @@ require 'singleton'
 
 # abstract goals
 class Goal
-  NEARBY_THRESHOLD = 200
   CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
 
   @@matrix = nil
 
   def self.all
-    CONCRETE_GOALS.inject([]) { |acc, klass| Module.const_get(klass).all + acc }
+    (CONCRETE_GOALS - [:Wander]).inject([]) { |acc, klass| Module.const_get(klass).all + acc }
   end
 
   def self.load_matrix!
@@ -27,20 +26,15 @@ class Goal
     @@priorities = Hash[CONCRETE_GOALS.zip(@@matrix * stats.to_vector)]
   end
 
-  def self.pick(ant, goals)
-    # pick a destination based on proximity and a weighting factor
-    nearby_goals = goals.find_all { |goal| goal.distance2(ant.square) < NEARBY_THRESHOLD }
-    goal = nearby_goals.min_by(&:priority)
-    log "Picked goal #{goal} for #{ant} from among #{nearby_goals.count} nearby goal(s)"
-    goal
-  end
-
   def priority
     @@priorities[self.class.to_s.to_sym]
   end
 end
 
+# TODO combine these classes?
 class Destination < Goal
+  attr_reader :square
+
   def initialize(square)
     @square = square
     @route_cache = {} # ant => route
@@ -242,6 +236,11 @@ class Escort < Goal
     @ant.square.distance2(square)
   end
 
+  # TODO pull me up
+  def square
+    @ant.square
+  end
+
   def next_square(ant)
     # TODO factor out w/ Destination - this is very similar but a moving target
     # can't cache routes b/c target moves
@@ -262,7 +261,7 @@ class Wander < Goal
   end
 
   def valid?
-    rand > 0.5 # don't wander too long
+    true
   end
 
   def distance2(square)

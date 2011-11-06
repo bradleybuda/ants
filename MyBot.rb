@@ -1,5 +1,5 @@
 $:.unshift File.dirname(__FILE__)
-%w(ai ant items stats params_matrix goals log square).each { |lib| require lib }
+%w(ai ant items stats params_matrix goals log square timeout_loop).each { |lib| require lib }
 
 module Enumerable
   def rand
@@ -11,18 +11,12 @@ AI.instance.setup do |ai|
   log "Mybot: Setup"
 end
 
-# wish this didn't have to be so conservative...
-TIME_SELF_OUT = true
-TIMEOUT_FUDGE = 0.5
-
 AI.instance.run do |ai|
-  budget = (ai.turntime / 1000.0) * TIMEOUT_FUDGE
-
-  living = Ant.living
+  ants_to_move = Ant.living.dup
 
   # Update map visibility
-  log "Updating visible squares for #{living.count} ants"
-  updated = living.inject(0) { |total, ant| total + ant.square.visit! }
+  log "Updating visible squares for #{ants_to_move.count} ants"
+  updated = ants_to_move.inject(0) { |total, ant| total + ant.square.visit! }
   log "Updated visibility of #{updated} squares"
 
   # Compute game statistics for weighting model
@@ -37,31 +31,63 @@ AI.instance.run do |ai|
   goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
   log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
-  # Make a priority queue of ants to move
-  ants_to_move = living.sort_by do |ant|
-    # two-dimensional sort - first on the goal type, then on the priority
-    if ant.goal.nil?
-      [-1, nil]
-    elsif ant.goal.class == Escort
-      [1, ant.goal.priority]
-    else
-      [0, ant.goal.priority]
+  # Purge any invalid goals
+  ants_to_move.each do |ant|
+    ant.goal = Wander.instance unless ant.goal.valid?
+  end
+
+  # Breadth-first search from all goals
+  visited = Set.new
+  queue = goals.map { |goal| { :square => goal.square, :goal => goal, :route => [] } }
+  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.7) do
+    # visit the first node in the queue and unpack it
+    elt = queue.shift
+    if elt.nil?
+      log "BFS: No more squares to search"
+      TimeoutLoop.halt!
+      next
+    end
+
+    square = elt[:square]
+    goal = elt[:goal]
+    route = elt[:route]
+
+    visited << [goal, square]
+
+    # Adjust ant orders if necessary
+    if ant = square.ant
+      log "BFS: hit #{ant} with #{goal}"
+      if ant.goal.nil?
+        log "BFS: #{ant} had no goal, assigning it this one"
+        ant.goal = goal # TODO assign route as well
+      else
+        log "BFS: #{ant} already has #{ant.goal}, comparing priorities"
+        if ant.goal.priority < goal.priority
+          log "BFS: new #{goal} is higher priority, giving it to #{ant}"
+          ant.goal = goal
+        else
+          log "BFS: existing #{ant.goal} is higher priority, no change to goal"
+        end
+      end
+    end
+
+    # put neighboring squares at end of search queue
+    square.neighbors.each do |neighbor|
+      next if visited.member?([goal, neighbor])
+      queue.push({ :square => neighbor, :goal => goal, :route => [square] + route })
     end
   end
 
+  # Issue orders for each ant's best-available goal
   stuck_once = []
-
-  until ants_to_move.empty? do
-    elapsed_time = Time.now.to_f - ai.start_time
-    remaining_budget = budget - elapsed_time
-    log "Spent #{(elapsed_time * 1000).to_i}/#{(budget * 1000).to_i}, #{(remaining_budget * 1000).to_i} remains"
-    if TIME_SELF_OUT && remaining_budget <= 0
-      log "Out of time, aborting with #{ants_to_move.size} unmoved ants. Will avoid spawning new ants."
-      Plug.enable!
-      break
+  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.1) do
+    ant = ants_to_move.shift
+    if ant.nil?
+      log "Issued orders to all ants before timing out"
+      TimeoutLoop.halt!
+      next
     end
 
-    ant = ants_to_move.shift
     log "Next ant in queue is #{ant}. After this we have #{ants_to_move.size} to move."
 
     # delay orders if we're stuck
@@ -80,19 +106,9 @@ AI.instance.run do |ai|
       next
     end
 
-    log "#{ant} has valid moves to #{valid.to_a}"
+    log "#{ant} wants to #{ant.goal} and has valid moves to #{valid.to_a}"
+    next_square = ant.goal.next_square(ant) # TODO use precomputed route
 
-    if ant.goal.nil?
-      log "#{ant} has no goal, needs a new one"
-      ant.goal = Goal.pick(ant, goals)
-    elsif !ant.goal.valid?
-      log "#{ant} can no longer execute #{ant.goal}, picking a new one"
-      ant.goal = Goal.pick(ant, goals)
-    else
-      log "#{ant} will continue with #{ant.goal}"
-    end
-
-    next_square = ant.goal.next_square(ant)
     log "#{ant} wants to go to #{next_square}"
 
     if next_square == ant.square
@@ -101,18 +117,9 @@ AI.instance.run do |ai|
       log "#{ant} will move to #{next_square}"
       ant.order_to next_square
     else
-      # this should never happen right?
-      if stuck_once.member?(ant)
-        log "#{ant} is stuck again, telling it to spread out"
-        ant.goal = Wander.instance
-      else
-        log "#{ant} is stuck, delaying orders until later"
-        ants_to_move.push(ant)
-        stuck_once << ant
-      end
+      log "#{ant} is stuck, delaying orders until later"
+      ants_to_move.push(ant)
+      stuck_once << ant
     end
   end
-
-  log "No more ants to move, done with turn"
-  Plug.disable! # all ants moved within time budget, so allow spawning again
 end
