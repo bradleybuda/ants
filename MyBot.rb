@@ -35,8 +35,8 @@ AI.instance.run do |ai|
   # TODO cache routes and goals
   ants_to_move.each do |ant|
     if ant.goal && !ant.goal.valid?
-      ant.goal = nil
-      ant.route = []
+      ant.goal = Wander.instance
+      ant.route = Wander.pick_route_for_ant(ant)
     end
   end
 
@@ -88,6 +88,8 @@ AI.instance.run do |ai|
     end
   end
 
+  # TODO restore the plug goal?
+
   log "BFS: done searching. Search count was #{search_count}, radius was at least #{search_radius - 1} squares from goals"
 
   # Issue orders for each ant's best-available goal
@@ -100,27 +102,18 @@ AI.instance.run do |ai|
       next
     end
 
-    log "Next ant in queue is #{ant}. After this we have #{ants_to_move.size} to move."
-
+    log "Next ant in queue is #{ant} with winning #{ant.goal}. After this we have #{ants_to_move.size} to move."
 
     valid = ant.square.neighbors - ant.square.blacklist
-
-    if ant.goal.nil?
-      log "We never found a goal for #{ant}, giving him a random route"
-      # bias random route toward open space
-      random_square = valid.max_by { |square| square.neighbors.count * rand }
-      ant.route = [random_square]
-    end
-
     route = ant.route
 
     if route.empty?
-      log "#{ant} will stay put to execute #{ant.goal}"
+      log "#{ant} has reached destination and will not move"
     elsif valid.member?(route.first)
       log "#{ant} will move to #{route.first}"
       ant.order_to route.shift
     else
-      log "#{ant} is stuck, delaying orders until later"
+      log "#{ant} is temporarily stuck, delaying orders until later"
       ants_to_move.push(ant)
       stuck_once << ant
     end

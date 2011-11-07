@@ -2,12 +2,12 @@ require 'singleton'
 
 # abstract goals
 class Goal
-  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug]
+  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
 
   @@matrix = nil
 
   def self.all
-    CONCRETE_GOALS.inject([]) { |acc, klass| Module.const_get(klass).all + acc }
+    (CONCRETE_GOALS - [:Wander]).inject([]) { |acc, klass| Module.const_get(klass).all + acc }
   end
 
   def self.load_matrix!
@@ -228,5 +228,24 @@ class Escort < Goal
 
   def to_s
     "<Goal: escort #{@ant} executing #{@ant.goal}>"
+  end
+end
+
+# pseudo-goal - it's the default when an ant has nothing to do
+class Wander < Goal
+  include Singleton
+
+  def valid?
+    true
+  end
+
+  def self.pick_route_for_ant(ant)
+    valid = ant.square.neighbors - ant.square.blacklist
+    random_square = valid.max_by { |square| square.neighbors.count * rand }
+    [random_square]
+  end
+
+  def to_s
+    "<Goal: wander randomly>"
   end
 end
