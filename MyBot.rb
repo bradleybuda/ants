@@ -102,8 +102,17 @@ AI.instance.run do |ai|
 
     log "Next ant in queue is #{ant}. After this we have #{ants_to_move.size} to move."
 
-    route = ant.route
+
     valid = ant.square.neighbors - ant.square.blacklist
+
+    if ant.goal.nil?
+      log "We never found a goal for #{ant}, giving him a random route"
+      # bias random route toward open space
+      random_square = valid.max_by { |square| square.neighbors.count * rand }
+      ant.route = [random_square]
+    end
+
+    route = ant.route
 
     if route.empty?
       log "#{ant} will stay put to execute #{ant.goal}"
