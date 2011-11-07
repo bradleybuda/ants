@@ -1,5 +1,5 @@
 $:.unshift File.dirname(__FILE__)
-%w(ai ant items stats params_matrix goals log square timeout_loop).each { |lib| require lib }
+%w(ai ant items stats params_matrix goals log search_node square timeout_loop).each { |lib| require lib }
 
 module Enumerable
   def rand
@@ -42,38 +42,37 @@ AI.instance.run do |ai|
 
   # Breadth-first search from all goals
   visited = Set.new
-  queue = goals.map { |goal| [goal.square, goal, []] }
+  queue = goals.map { |goal| SearchNode.new(goal.square, goal, []) }
   search_radius = 0; search_count = 0 # instrument how far we were able to search
 
   TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.8) do
     # visit the first node in the queue and unpack it
-    elt = queue.shift
-    if elt.nil?
+    node = queue.shift
+    if node.nil?
       log "BFS: No more squares to search"
       TimeoutLoop.halt!
       next
     end
 
-    square, goal, route = *elt
-    search_radius = route.size
+    search_radius = node.route.size
     search_count += 1
 
     # TODO keep the marker on the square instead of in the master set?
-    visited << [goal, square]
+    visited << [node.goal, node.square]
 
     # Adjust ant orders if necessary
-    if ant = square.ant
-      log "BFS: hit #{ant} with #{goal}"
+    if ant = node.square.ant
+      log "BFS: hit #{ant} with #{node.goal}"
       if ant.goal.nil?
         log "BFS: #{ant} had no goal, assigning it this one"
-        ant.goal = goal
-        ant.route = route
+        ant.goal = node.goal
+        ant.route = node.route
       else
         log "BFS: #{ant} already has #{ant.goal}, comparing priorities"
-        if ant.goal.priority < goal.priority
-          log "BFS: new #{goal} is higher priority, giving it to #{ant}"
-          ant.goal = goal
-          ant.route = route
+        if ant.goal.priority < node.goal.priority
+          log "BFS: new #{node.goal} is higher priority, giving it to #{ant}"
+          ant.goal = node.goal
+          ant.route = node.route
         else
           log "BFS: existing #{ant.goal} is higher priority, no change to goal"
         end
@@ -81,11 +80,11 @@ AI.instance.run do |ai|
     end
 
     # put neighboring squares at end of search queue
-    square.neighbors.each do |neighbor|
+    node.square.neighbors.each do |neighbor|
       # I don't know if this is a good idea, to avoid searching never-observed squares
       next if !neighbor.observed?
-      next if visited.member?([goal, neighbor])
-      queue.push([neighbor, goal, [square] + route])
+      next if visited.member?([node.goal, neighbor])
+      queue.push(SearchNode.new(neighbor, node.goal, [node.square] + node.route))
     end
   end
 
