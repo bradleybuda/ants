@@ -62,10 +62,13 @@ end
 
 # concrete goals
 
-# TODO i think this is broken in the DFS for some reason
 class Explore < Destination
+  @@index = {}
+
   def self.all
-    Square.observed.find_all { |square| square.frontier? }.map { |square| Explore.new(square) }
+    Square.observed.find_all { |square| square.frontier? }.map do |square|
+      @@index[square] ||= Explore.new(square)
+    end
   end
 
   def valid?
@@ -78,8 +81,12 @@ class Explore < Destination
 end
 
 class Raze < Destination
+  @@index = {}
+
   def self.all
-    Hill.all.find_all(&:enemy?).map { |hill| Raze.new(hill) }
+    Hill.all.find_all(&:enemy?).map do |hill|
+      @@index[hill] ||= Raze.new(hill)
+    end
   end
 
   def initialize(hill)
@@ -116,12 +123,15 @@ class Kill < Destination
 end
 
 class Defend < NextToItem
+  @@index = {}
+
   def self.all
     results = []
 
     Hill.all.find_all(&:mine?).each do |hill|
       hill.square.neighbors.each do |neighbor|
-        results << Defend.new(neighbor, hill)
+        @@index[[neighbor, hill]] ||= Defend.new(neighbor, hill)
+        results << @@index[[neighbor, hill]]
       end
     end
 
@@ -134,12 +144,15 @@ class Defend < NextToItem
 end
 
 class Eat < NextToItem
+  @@index = {}
+
   def self.all
     results = []
 
     Food.all.each do |food|
       food.square.neighbors.each do |neighbor|
-        results << Eat.new(neighbor, food)
+        @@index[[neighbor, food]] ||= Eat.new(neighbor, food)
+        results << @@index[[neighbor, food]]
       end
     end
 
@@ -166,10 +179,13 @@ class Plug < Destination
     @@plug_active
   end
 
-  # TODO only one ant should attempt to execute the plug goal
+  @@index = {}
+
   def self.all
     if Plug.active?
-      Hill.all.find_all(&:mine?).map { |hill| Plug.new(hill) }
+      Hill.all.find_all(&:mine?).map do |hill|
+        @@index[hill] ||= Plug.new(hill)
+      end
     else
       []
     end
@@ -195,7 +211,7 @@ class Escort < Goal
   CAN_ESCORT = [Eat, Explore, Raze, Kill]
 
   def self.all
-    Ant.living.find_all { |ant| Escort.ant_is_escortable?(ant)  }.map { |ant| Escort.new(ant) }
+    Ant.living.find_all { |ant| Escort.ant_is_escortable?(ant) }.map { |ant| Escort.new(ant) }
   end
 
   def self.ant_is_escortable?(ant)

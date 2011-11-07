@@ -80,6 +80,7 @@ class Square
   attr_reader :row, :col
   attr_accessor :ant, :next_ant
   attr_accessor :item
+  attr_reader :goals
 
   def initialize(row, col)
     @row = row
@@ -87,6 +88,9 @@ class Square
     @observed = false
     @visited = false
     @item = nil
+
+    # Map of a goal instance to a route to that goal, from this square
+    @goals = {} # TODO find a clever way to work Wander into here
   end
 
   def neighbors

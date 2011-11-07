@@ -1,5 +1,5 @@
 $:.unshift File.dirname(__FILE__)
-%w(ai ant items stats params_matrix goals log search_node square timeout_loop).each { |lib| require lib }
+%w(ai ant containers items stats params_matrix goals log priority_queue search_node square timeout_loop).each { |lib| require lib }
 
 module Enumerable
   def rand
@@ -11,13 +11,20 @@ AI.instance.setup do |ai|
   log "Mybot: Setup"
 end
 
+goal_search_queue = Containers::PriorityQueue.new
+
 AI.instance.run do |ai|
+  log "Search queue has size #{goal_search_queue.size} (from previous turns)"
+
   ants_to_move = Ant.living.dup
 
   # Update map visibility
   log "Updating visible squares for #{ants_to_move.count} ants"
   updated = ants_to_move.inject(0) { |total, ant| total + ant.square.visit! }
   log "Updated visibility of #{updated} squares"
+
+  # TODO restore any newly visible squares to the goal_search_queue if
+  # they were previously set aside
 
   # Compute game statistics for weighting model
   stats = Stats.new(ai)
@@ -31,8 +38,8 @@ AI.instance.run do |ai|
   goal_stats = goals.group_by(&:class).map { |k, v| [k, v.size] }
   log "Found #{goals.size} initial goals - #{goal_stats.inspect}"
 
-  # Purge all previous goals
-  # TODO cache routes and goals
+  # Purge all invalid ant goals
+  # TODO can push this down to the second loop
   ants_to_move.each do |ant|
     if ant.goal && !ant.goal.valid?
       ant.goal = Wander.instance
@@ -40,14 +47,20 @@ AI.instance.run do |ai|
     end
   end
 
-  # Breadth-first search from all goals
-  visited = Set.new
-  queue = goals.map { |goal| SearchNode.new(goal.square, goal, []) }
-  search_radius = 0; search_count = 0 # instrument how far we were able to search
+  # Figure out which goals are new and seed them into the DFS queue
+  goals.each do |goal|
+    square = goal.square
+    if !square.goals.has_key?(goal)
+      goal_search_queue.push(SearchNode.new(goal.square, goal, []), 2)
+    end
+  end
 
+  log "Search queue has size #{goal_search_queue.size} after goal generation"
+
+  search_radius = 0; search_count = 0 # instrument how far we were able to search
   TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.8) do
     # visit the first node in the queue and unpack it
-    node = queue.shift
+    node = goal_search_queue.pop
     if node.nil?
       log "BFS: No more squares to search"
       TimeoutLoop.halt!
@@ -57,34 +70,23 @@ AI.instance.run do |ai|
     search_radius = node.route.size
     search_count += 1
 
-    # TODO keep the marker on the square instead of in the master set?
-    visited << [node.goal, node.square]
+    # Record the route to this goal on the square
+    square = node.square
+    goal = node.goal
+    route = node.route
 
-    # Adjust ant orders if necessary
-    if ant = node.square.ant
-      log "BFS: hit #{ant} with #{node.goal}"
-      if ant.goal.nil?
-        log "BFS: #{ant} had no goal, assigning it this one"
-        ant.goal = node.goal
-        ant.route = node.route
-      else
-        log "BFS: #{ant} already has #{ant.goal}, comparing priorities"
-        if ant.goal.priority < node.goal.priority
-          log "BFS: new #{node.goal} is higher priority, giving it to #{ant}"
-          ant.goal = node.goal
-          ant.route = node.route
-        else
-          log "BFS: existing #{ant.goal} is higher priority, no change to goal"
-        end
-      end
-    end
+    square.goals[goal] = route
 
     # put neighboring squares at end of search queue
-    node.square.neighbors.each do |neighbor|
-      # I don't know if this is a good idea, to avoid searching never-observed squares
+    square.neighbors.each do |neighbor|
+      # TODO instead of skipping, need to put this on a retry queue
       next if !neighbor.observed?
-      next if visited.member?([node.goal, neighbor])
-      queue.push(SearchNode.new(neighbor, node.goal, [node.square] + node.route))
+
+      # Don't enqueue the neighbor if we've already visited it for this goal
+      next if neighbor.goals.has_key?(goal)
+
+      new_route = [square] + route
+      goal_search_queue.push(SearchNode.new(neighbor, goal, new_route), 1.0 / new_route.size)
     end
   end
 
@@ -102,16 +104,22 @@ AI.instance.run do |ai|
       next
     end
 
-    log "Next ant in queue is #{ant} with winning #{ant.goal}. After this we have #{ants_to_move.size} to move."
+    log "Next ant in queue is #{ant}; after this we have #{ants_to_move.size} to move."
 
-    valid = ant.square.neighbors - ant.square.blacklist
-    route = ant.route
+    # Find the best goal that this square knows about
+    square = ant.square
+    best_goal = square.goals.keys.find_all(&:valid?).max_by(&:priority) # TODO gc invalid goals
+
+    valid = square.neighbors - square.blacklist
+    route = square.goals[best_goal]
+
+    log "Best goal from #{square} is #{best_goal} with route #{route}"
 
     if route.empty?
       log "#{ant} has reached destination and will not move"
     elsif valid.member?(route.first)
       log "#{ant} will move to #{route.first}"
-      ant.order_to route.shift
+      ant.order_to route.first
     else
       log "#{ant} is temporarily stuck, delaying orders until later"
       ants_to_move.push(ant)
