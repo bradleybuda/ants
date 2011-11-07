@@ -24,6 +24,7 @@ class Goal
 
     @@stats = stats
     @@priorities = Hash[CONCRETE_GOALS.zip(@@matrix * stats.to_vector)]
+    log "Priorities for this round are #{@@priorities.inspect}"
   end
 
   def priority
@@ -236,7 +237,7 @@ class Wander < Goal
   include Singleton
 
   def valid?
-    true
+    false # only lasts one turn
   end
 
   def self.pick_route_for_ant(ant)
