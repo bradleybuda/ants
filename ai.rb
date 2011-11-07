@@ -73,8 +73,6 @@ class AI
 
     over = false
     until over
-      GC.disable
-
       over = read_turn
 
       if !over
@@ -83,9 +81,6 @@ class AI
         @stdout.puts 'go'
         @stdout.flush
       end
-
-      GC.enable
-      GC.start
     end
   end
 
