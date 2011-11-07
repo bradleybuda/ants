@@ -2,7 +2,8 @@ require 'singleton'
 
 # abstract goals
 class Goal
-  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
+  # TODO restore Escort
+  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Plug, :Wander]
 
   @@matrix = nil
 
@@ -259,7 +260,7 @@ class Wander < Goal
   def self.pick_route_for_ant(ant)
     valid = ant.square.neighbors - ant.square.blacklist
     random_square = valid.max_by { |square| square.neighbors.count * rand }
-    [random_square]
+    random_square.nil? ? [] : [random_square]
   end
 
   def to_s
