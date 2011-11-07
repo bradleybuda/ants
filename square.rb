@@ -202,8 +202,7 @@ class Square
   end
 
   def blacklist
-    # TODO also blacklist friendly hills
-    Set.new(neighbors.find_all { |n| n.next_ant || n.has_food? })
+    Set.new(neighbors.find_all { |n| n.next_ant || n.has_food? || n.has_hill? })
   end
 
   def reset!
