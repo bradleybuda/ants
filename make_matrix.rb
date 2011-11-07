@@ -1,8 +1,10 @@
 #!/usr/bin/env ruby
 
-#CONCRETE_GOALS = [Eat, Raze, Kill, Defend, Explore, Escort, Plug, Wander]
-WEIGHTS = [1000, 800, 100, 10, 700, 20, 10, 1]
+require 'matrix'
+require './params_matrix'
 
-matrix = Array.new(64) { |i| WEIGHTS[i % 8] }
-packed = matrix.pack("L*")
-File.open('matrix', 'w') { |f| f.binmode; f.write(packed) }
+#CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
+WEIGHTS =         [255,  255,   128,   1,       200,      20,      10,    2      ]
+
+m = Matrix.build(ParamsMatrix::ROWS, ParamsMatrix::COLS) { |r, c| WEIGHTS[r] }
+File.open('matrix', 'w') { |f| ParamsMatrix.write(f, m) }
