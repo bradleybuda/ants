@@ -206,7 +206,7 @@ class Square
   end
 
   def blacklist
-    Set.new(neighbors.find_all { |n| n.next_ant || n.has_food? || n.has_hill? })
+    Set.new(neighbors.find_all { |n| n.next_ant || n.has_food? || (n.has_hill? && n.item.mine?) })
   end
 
   def reset!
