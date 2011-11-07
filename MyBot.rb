@@ -42,8 +42,7 @@ AI.instance.run do |ai|
   # TODO can push this down to the second loop
   ants_to_move.each do |ant|
     if ant.goal && !ant.goal.valid?
-      ant.goal = Wander.instance
-      ant.route = Wander.pick_route_for_ant(ant)
+      ant.goal = nil
     end
   end
 
@@ -58,7 +57,7 @@ AI.instance.run do |ai|
   log "Search queue has size #{goal_search_queue.size} after goal generation"
 
   search_radius = 0; search_count = 0 # instrument how far we were able to search
-  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.8) do
+  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.5) do
     # visit the first node in the queue and unpack it
     node = goal_search_queue.pop
     if node.nil?
@@ -70,11 +69,14 @@ AI.instance.run do |ai|
     search_radius = node.route.size
     search_count += 1
 
-    # Record the route to this goal on the square
     square = node.square
     goal = node.goal
     route = node.route
 
+    # Purge from queue if no longer valid
+    next unless goal.valid?
+
+    # Record the route to this goal on the square
     square.goals[goal] = route
 
     # put neighboring squares at end of search queue
@@ -95,8 +97,7 @@ AI.instance.run do |ai|
   log "BFS: done searching. Search count was #{search_count}, radius was at least #{search_radius - 1} squares from goals"
 
   # Issue orders for each ant's best-available goal
-  stuck_once = []
-  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.1) do
+  TimeoutLoop.run((AI.instance.turntime / 1000.0) * 0.2) do
     ant = ants_to_move.shift
     if ant.nil?
       log "Issued orders to all ants before timing out"
@@ -106,24 +107,33 @@ AI.instance.run do |ai|
 
     log "Next ant in queue is #{ant}; after this we have #{ants_to_move.size} to move."
 
-    # Find the best goal that this square knows about
+    # Find the best goal that this square knows about and is passable
     square = ant.square
-    best_goal = square.goals.keys.find_all(&:valid?).max_by(&:priority) # TODO gc invalid goals
+    passable = square.neighbors - square.blacklist
 
-    valid = square.neighbors - square.blacklist
-    route = square.goals[best_goal]
+    # Iterate through all the square's goals doing two things: purge invalids, and find highest priority
+    best_goal = Wander.instance
+    best_route = Wander.pick_route_for_ant(ant)
 
-    log "Best goal from #{square} is #{best_goal} with route #{route}"
+    square.goals.each do |goal, route|
+      if goal.valid?
+        if goal.priority > best_goal.priority && passable.member?(route.first)
+          best_goal = goal
+          best_route = route
+        end
+      else
+        square.goals.delete(goal)
+      end
+    end
 
-    if route.empty?
-      log "#{ant} has reached destination and will not move"
-    elsif valid.member?(route.first)
-      log "#{ant} will move to #{route.first}"
-      ant.order_to route.first
+    log "Best passable goal from #{square} is #{best_goal} with route #{best_route}"
+    ant.goal = best_goal # required for escortability check
+
+    if best_route.empty?
+      log "#{ant} has reached destination (or is stuck) and will not move"
     else
-      log "#{ant} is temporarily stuck, delaying orders until later"
-      ants_to_move.push(ant)
-      stuck_once << ant
+      log "#{ant} will move to #{best_route.first}"
+      ant.order_to best_route.first
     end
   end
 end
