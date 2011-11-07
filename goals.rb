@@ -2,8 +2,8 @@ require 'singleton'
 
 # abstract goals
 class Goal
-  # TODO restore Escort
-  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Plug, :Wander]
+  # TODO restore Plug
+  CONCRETE_GOALS = [:Eat, :Raze, :Kill, :Defend, :Explore, :Escort, :Plug, :Wander]
 
   @@matrix = nil
 
@@ -220,12 +220,12 @@ class Escort < Goal
   end
 
   def initialize(ant)
-    super()
     @ant = ant
+    @turn = AI.instance.turn_number
   end
 
   def valid?
-    Escort.ant_is_escortable?(@ant)
+    (AI.instance.turn_number == @turn) && Escort.ant_is_escortable?(@ant)
   end
 
   def distance2(square)

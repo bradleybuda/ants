@@ -115,6 +115,8 @@ AI.instance.run do |ai|
     best_goal = Wander.instance
     best_route = Wander.pick_route_for_ant(ant)
 
+    log "Square has #{square.goals.size} goals attached"
+
     square.goals.each do |goal, route|
       if goal.valid?
         if goal.priority > best_goal.priority && passable.member?(route.first)
