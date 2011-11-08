@@ -3,6 +3,9 @@ package com.bradleybuda;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 public class Ant {
     private static final Set<Ant> LIVING = new HashSet<Ant>();
     private static int nextAntId = 0;
@@ -52,5 +55,19 @@ public class Ant {
     @Override
     public String toString() {
         return String.format("<Ant %d at %s>", id, square);
+    }
+    
+    @Override
+    public int hashCode() {
+        HashCodeBuilder b = new HashCodeBuilder();
+        b.append(square);
+        return b.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        EqualsBuilder b = new EqualsBuilder();
+        b.append(this.square, ((Ant)obj).square);
+        return b.isEquals();
     }
 }
