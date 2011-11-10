@@ -24,7 +24,7 @@ public class Ant {
         LIVING.add(this);
     }
     
-    public static void advanceTurn() {
+    public static void advanceAllTurns() {
         for (final Ant a : LIVING)
             a.advanceTurn();
     }

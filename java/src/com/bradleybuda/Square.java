@@ -284,4 +284,12 @@ public class Square {
         final Square other = (Square)obj;
         return new EqualsBuilder().append(row, other.row).append(col, other.col).isEquals();
     }
+
+    public void setAnt(final Ant ant) {
+        this.ant = ant;
+    }
+    
+    public void setNextAnt(final Ant nextAnt) {
+        this.nextAnt = nextAnt;
+    }
 }
