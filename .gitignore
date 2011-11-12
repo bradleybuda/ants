@@ -2,3 +2,5 @@
 .DS_Store
 best*
 *.class
+*.6
+go/MyBot
