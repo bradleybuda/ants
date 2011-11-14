@@ -108,10 +108,9 @@ func (square *Square) HasFood() bool {
 }
 
 func (square *Square) HasHill() bool {
-	// TODO implement
-	return false;
+	return (square.item != nil) && (square.item.ItemType() == Hill)
 }
 
-func (sqaure *Square) HasEnemyAnt() bool {
-	return false;
+func (square *Square) HasEnemyAnt() bool {
+	return (square.item != nil) && (square.item.ItemType() == EnemyAnt)
 }
