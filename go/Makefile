@@ -10,7 +10,7 @@ GOFILES=\
 	location.go\
 	main.go\
 	MyBot.go\
-	sqaure.go\
+	square.go\
 	state.go\
 	stats.go\
 
