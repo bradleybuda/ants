@@ -8,10 +8,12 @@ import (
 	"syslog"
 )
 
+type Route []*Square
+
 type SearchNode struct {
 	square *Square
 	goal Goal
-	route []*Square
+	route Route
 }
 
 type GoalQueue struct {
@@ -88,9 +90,54 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		goal := elt.(Goal)
 		square := goal.Square()
 		if !square.HasGoal(goal) {
-			route := make([]*Square, 0)
+			route := make(Route, 0)
 			heap.Push(mb.goalQueue, SearchNode{square, goal, route})
 		}
+	}
+
+	mb.logger.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
+
+	searchRadius := 0
+	searchCount := 0
+
+	// TODO keep track of time and don't loop forever
+	for mb.goalQueue.Len() > 0 {
+    // visit the first node in the queue and unpack it
+    node := heap.Pop(mb.goalQueue).(SearchNode)
+		searchRadius = len(node.route)
+		searchCount++
+
+		square, goal, route := node.square, node.goal, node.route
+
+    // Purge from queue if no longer valid
+		if !goal.IsValid() {
+			continue
+		}
+
+    // Record the route to this goal on the square
+		square.goals[goal] = route
+
+		// put neighboring squares at end of search queue
+		for _, neighbor := range square.Neighbors() {
+      // TODO instead of skipping, need to put this on a retry queue
+			if !neighbor.observed {
+				continue
+			}
+
+      // Don't enqueue the neighbor if we've already visited it for this goal
+			if neighbor.HasGoal(goal) {
+				continue
+			}
+
+			newRoute := make(Route, 0)
+			newRoute = append(newRoute, square)
+			newRoute = append(newRoute, route...)
+
+			heap.Push(mb.goalQueue, SearchNode{neighbor, goal, newRoute})
+		}
+
+		// TODO restore the plug goal?
+		mb.logger.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)
 	}
 
 	//returning an error will halt the whole program!

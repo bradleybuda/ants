@@ -10,6 +10,7 @@ type Square struct {
 	observed bool
 	visited bool
 	item Item
+	goals map[Goal]Route
 }
 
 type SquareSet map[Location]*Square
@@ -117,4 +118,8 @@ func (square *Square) HasEnemyAnt() bool {
 
 func (square *Square) HasGoal(goal Goal) bool {
 	return false; // TODO implement
+}
+
+func (square *Square) Neighbors() []*Square {
+	return make([]*Square, 0); // TODO Implement
 }
