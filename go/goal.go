@@ -4,4 +4,5 @@ type GoalType int
 
 type Goal interface {
 	GoalType() GoalType
+	IsValid() bool
 }

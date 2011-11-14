@@ -1,5 +1,6 @@
 package main
 
 type Ant struct {
-	Square *Square
+	square *Square
+	goal Goal
 }
