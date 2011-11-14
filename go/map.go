@@ -290,7 +290,7 @@ func (m *Map) RemoveDestination(loc Location) {
 	m.Destinations[loc] = false, false
 }
 
-//SafeDestination will tell you if the given location is a 
+//SafeDestination will tell you if the given location is a
 //safe place to dispatch an ant. It considers water and both
 //ants that have already sent an order and those that have not.
 func (m *Map) SafeDestination(loc Location) bool {
@@ -326,36 +326,6 @@ func (m *Map) FromLocation(loc Location) (Row, Col int) {
 	Row = int(loc) / m.Cols
 	Col = int(loc) % m.Cols
 	return
-}
-
-
-//Direction represents the direction concept for issuing orders.
-type Direction int
-
-const (
-	North Direction = iota
-	East
-	South
-	West
-
-	NoMovement
-)
-
-func (d Direction) String() string {
-	switch d {
-	case North:
-		return "n"
-	case South:
-		return "s"
-	case West:
-		return "w"
-	case East:
-		return "e"
-	case NoMovement:
-		return "-"
-	}
-	log.Panicf("%v is not a valid direction", d)
-	return ""
 }
 
 //Move returns a new location which is one step in the specified direction from the specified location.

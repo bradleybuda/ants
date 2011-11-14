@@ -2,14 +2,16 @@ include $(GOROOT)/src/Make.inc
 
 TARG=MyBot
 GOFILES=\
-	ants.go\
-	map.go\
-	main.go\
-	debugging.go\
-	MyBot.go\
 	ant.go\
+	ants.go\
+	direction.go\
 	goal.go\
+	item.go\
+	main.go\
+	MyBot.go\
+	position.go\
 	sqaure.go\
+	state.go\
 	stats.go\
 
 include $(GOROOT)/src/Make.cmd

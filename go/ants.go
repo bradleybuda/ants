@@ -1,12 +1,11 @@
 package main
 
 import (
-	"container/vector"
 	"os"
 	"bufio"
 	"strconv"
 	"strings"
-	"fmt"
+//	"fmt"
 	"log"
 )
 
@@ -16,27 +15,6 @@ type Bot interface {
 }
 
 var stdin = bufio.NewReader(os.Stdin)
-
-//State keeps track of everything we need to know about the state of the game
-type State struct {
-	LoadTime      int   //in milliseconds
-	TurnTime      int   //in milliseconds
-	Rows          int   //number of rows in the map
-	Cols          int   //number of columns in the map
-	Turns         int   //maximum number of turns in the game
-	ViewRadius2   int   //view radius squared
-	AttackRadius2 int   //battle radius squared
-	SpawnRadius2  int   //spawn radius squared
-	PlayerSeed    int64 //random player seed
-	Turn          int   //current turn number
-
-	Map *Map
-  LivingAnts vector.Vector
-	Stats *Stats
-}
-
-func (s *State) SetStats(stats *Stats) {
-}
 
 //Start takes the initial parameters from stdin
 func (s *State) Start() os.Error {
@@ -92,7 +70,7 @@ func (s *State) Start() os.Error {
 		}
 	}
 
-	s.Map = NewMap(s.Rows, s.Cols)
+
 	s.Stats = new(Stats)
 
 	return nil
@@ -130,7 +108,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 			BetweenTurnWork()
 
-			s.Map.Reset()
+//			s.Map.Reset()
 			continue
 		}
 
@@ -154,68 +132,68 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for food): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddFood(loc)
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddFood(loc)
 		case "w":
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddWater(loc)
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddWater(loc)
 		case "a":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			Ant, _ := strconv.Atoi(words[3])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddAnt(loc, Item(Ant))
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			Ant, _ := strconv.Atoi(words[3])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddAnt(loc, Item(Ant))
 
 			//if it turns out that you don't actually use the visible radius for anything,
 			//feel free to comment this out. It's needed for the image debugging, though.
-			if Item(Ant) == MY_ANT {
-				s.Map.AddDestination(loc)
-				s.Map.AddLand(loc, s.ViewRadius2)
-			}
+//			if Item(Ant) == MY_ANT {
+//				s.Map.AddDestination(loc)
+//				s.Map.AddLand(loc, s.ViewRadius2)
+//			}
 		case "A":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			Ant, _ := strconv.Atoi(words[3])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddAnt(loc, Item(Ant).ToOccupied())
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			Ant, _ := strconv.Atoi(words[3])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddAnt(loc, Item(Ant).ToOccupied())
 
 			//if it turns out that you don't actually use the visible radius for anything,
 			//feel free to comment this out. It's needed for the image debugging, though.
-			if Item(Ant) == MY_ANT {
-				s.Map.AddDestination(loc)
-				s.Map.AddLand(loc, s.ViewRadius2)
-			}
+//			if Item(Ant) == MY_ANT {
+//				s.Map.AddDestination(loc)
+//				s.Map.AddLand(loc, s.ViewRadius2)
+//			}
 		case "h":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			Ant, _ := strconv.Atoi(words[3])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddHill(loc, Item(Ant).ToUnoccupied())
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			Ant, _ := strconv.Atoi(words[3])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddHill(loc, Item(Ant).ToUnoccupied())
 		case "d":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)
 			}
-			Row, _ := strconv.Atoi(words[1])
-			Col, _ := strconv.Atoi(words[2])
-			Ant, _ := strconv.Atoi(words[3])
-			loc := s.Map.FromRowCol(Row, Col)
-			s.Map.AddDeadAnt(loc, Item(Ant))
+//			Row, _ := strconv.Atoi(words[1])
+//			Col, _ := strconv.Atoi(words[2])
+//			Ant, _ := strconv.Atoi(words[3])
+//			loc := s.Map.FromRowCol(Row, Col)
+//			s.Map.AddDeadAnt(loc, Item(Ant))
 
 		}
 	}
@@ -225,20 +203,20 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 //Call IssueOrderRowCol to issue an order for an ant at (Row, Col)
 func (s *State) IssueOrderRowCol(Row, Col int, d Direction) {
-	loc := s.Map.FromRowCol(Row, Col)
-	dest := s.Map.Move(loc, d)
-	s.Map.RemoveDestination(loc)
-	s.Map.AddDestination(dest)
-	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
+//	loc := s.Map.FromRowCol(Row, Col)
+//	dest := s.Map.Move(loc, d)
+//	s.Map.RemoveDestination(loc)
+//	s.Map.AddDestination(dest)
+//	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
 }
 
 //Call IssueOrderLoc to issue an order for an ant at loc
 func (s *State) IssueOrderLoc(loc Location, d Direction) {
-	Row, Col := s.Map.FromLocation(loc)
-	dest := s.Map.Move(loc, d)
-	s.Map.RemoveDestination(loc)
-	s.Map.AddDestination(dest)
-	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
+//	Row, Col := s.Map.FromLocation(loc)
+//	dest := s.Map.Move(loc, d)
+//	s.Map.RemoveDestination(loc)
+//	s.Map.AddDestination(dest)
+//	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
 }
 
 //endTurn is called by Loop, you don't need to call it.
