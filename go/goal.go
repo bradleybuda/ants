@@ -1,4 +1,7 @@
 package main
 
-type Goal struct {
+type GoalType int
+
+type Goal interface {
+	GoalType() GoalType
 }

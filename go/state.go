@@ -20,6 +20,8 @@ type State struct {
 
 	AllSquares SquareSet
 	ObservedSquares SquareSet
+
+	AllGoals vector.Vector
 }
 
 func (s *State) NormalizeRow(row int) int {

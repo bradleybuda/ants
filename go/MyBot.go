@@ -58,6 +58,23 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	s.Stats.Update(s)
 	mb.logger.Printf("Current turn statistics are %+v", s.Stats)
 
+  // Make a shared list of goals used by all ants
+  // TODO can skip this until we actually need to pick a goal
+  mb.logger.Printf("Looking for goals")
+	goalStats := make(map[GoalType]*vector.Vector)
+	// group goals by type (TODO maybe we should just keep them in this form?)
+	for _, elt := range s.AllGoals {
+		goal := elt.(Goal)
+		goalType := goal.GoalType()
+		_, ok := goalStats[goalType]
+		if (!ok) {
+			goalStats[goalType] = new(vector.Vector)
+		}
+		goalStats[goalType].Push(goal)
+	}
+	mb.logger.Printf("Found initial goals: %v", goalStats)
+
+
 	//returning an error will halt the whole program!
 	return nil
 }
