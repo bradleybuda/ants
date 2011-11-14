@@ -114,3 +114,7 @@ func (square *Square) HasHill() bool {
 func (square *Square) HasEnemyAnt() bool {
 	return (square.item != nil) && (square.item.ItemType() == EnemyAnt)
 }
+
+func (square *Square) HasGoal(goal Goal) bool {
+	return false; // TODO implement
+}

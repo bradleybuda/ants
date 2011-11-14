@@ -10,7 +10,7 @@ import (
 
 type SearchNode struct {
 	square *Square
-	goal *Goal
+	goal Goal
 	route []*Square
 }
 
@@ -80,6 +80,16 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		ant := elt.(Ant)
 		if (ant.goal != nil) && (!ant.goal.IsValid()) {
 			ant.goal = nil
+		}
+	}
+
+  // Figure out which goals are new and seed them into the DFS queue
+	for _, elt := range s.AllGoals {
+		goal := elt.(Goal)
+		square := goal.Square()
+		if !square.HasGoal(goal) {
+			route := make([]*Square, 0)
+			heap.Push(mb.goalQueue, SearchNode{square, goal, route})
 		}
 	}
 
