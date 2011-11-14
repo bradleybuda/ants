@@ -22,10 +22,6 @@ type State struct {
 	ObservedSquares SquareSet
 }
 
-func (s *State) SetStats(stats *Stats) {
-	// TODO implement
-}
-
 func (s *State) NormalizeRow(row int) int {
 	return row % s.Rows
 }
