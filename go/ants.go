@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/vector"
 	"os"
 	"bufio"
 	"strconv"
@@ -30,6 +31,11 @@ type State struct {
 	Turn          int   //current turn number
 
 	Map *Map
+  LivingAnts vector.Vector
+	Stats *Stats
+}
+
+func (s *State) SetStats(stats *Stats) {
 }
 
 //Start takes the initial parameters from stdin
@@ -87,6 +93,7 @@ func (s *State) Start() os.Error {
 	}
 
 	s.Map = NewMap(s.Rows, s.Cols)
+	s.Stats = new(Stats)
 
 	return nil
 }
