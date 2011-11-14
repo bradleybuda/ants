@@ -7,9 +7,9 @@ GOFILES=\
 	direction.go\
 	goal.go\
 	item.go\
+	location.go\
 	main.go\
 	MyBot.go\
-	location.go\
 	sqaure.go\
 	state.go\
 	stats.go\
