@@ -1,43 +1,48 @@
 package main
 
 import (
+	"container/vector"
+	"container/heap"
+	"log"
 	"os"
-	"rand"
+	"syslog"
 )
 
-type MyBot struct {
+type SearchNode struct {
+	square *Square
+	goal *Goal
+	route []*Square
+}
 
+type GoalQueue struct {
+	vector.Vector
+}
+
+// i,j are indices of elements to compare
+func (gq *GoalQueue) Less(i, j int) bool {
+	return false; // TODO
+}
+
+type MyBot struct {
+	goalQueue *GoalQueue
+	logger *log.Logger
 }
 
 //NewBot creates a new instance of your bot
 func NewBot(s *State) Bot {
-	mb := &MyBot{
-	//do any necessary initialization here
-	}
+	mb := new(MyBot)
+	mb.goalQueue = new(GoalQueue)
+	heap.Init(mb.goalQueue)
+
+	mb.logger = syslog.NewLogger(syslog.LOG_DEBUG, 0)
+
 	return mb
 }
 
 //DoTurn is where you should do your bot's actual work.
 func (mb *MyBot) DoTurn(s *State) os.Error {
-	dirs := []Direction{North, East, South, West}
-	for loc, ant := range s.Map.Ants {
-		if ant != MY_ANT {
-			continue
-		}
+	mb.logger.Printf("Search queue has size %v (from previous turns)", mb.goalQueue.Len())
 
-		//try each direction in a random order
-		p := rand.Perm(4)
-		for _, i := range p {
-			d := dirs[i]
-
-			loc2 := s.Map.Move(loc, d)
-			if s.Map.SafeDestination(loc2) {
-				s.IssueOrderLoc(loc, d)
-				//there's also an s.IssueOrderRowCol if you don't have a Location handy
-				break
-			}
-		}
-	}
 	//returning an error will halt the whole program!
 	return nil
 }

@@ -7,5 +7,7 @@ GOFILES=\
 	main.go\
 	debugging.go\
 	MyBot.go\
+	goal.go\
+	sqaure.go\
 
 include $(GOROOT)/src/Make.cmd
