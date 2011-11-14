@@ -9,7 +9,7 @@ GOFILES=\
 	item.go\
 	main.go\
 	MyBot.go\
-	position.go\
+	location.go\
 	sqaure.go\
 	state.go\
 	stats.go\

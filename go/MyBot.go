@@ -48,7 +48,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	updated := 0
 	for _, elt := range s.LivingAnts {
 		ant := elt.(Ant)
-		updated += ant.Square.Visit()
+		updated += ant.Square.Visit(s)
 	}
 	mb.logger.Printf("Updated visiblity of %v squares", updated)
 

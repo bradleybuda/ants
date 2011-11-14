@@ -17,8 +17,19 @@ type State struct {
 
   LivingAnts vector.Vector
 	Stats *Stats
-	Squares map[Location]Square
+
+	AllSquares SquareSet
+	ObservedSquares SquareSet
 }
 
 func (s *State) SetStats(stats *Stats) {
+	// TODO implement
+}
+
+func (s *State) NormalizeRow(row int) int {
+	return row % s.Rows
+}
+
+func (s *State) NormalizeCol(col int) int {
+	return col % s.Cols
 }

@@ -16,7 +16,7 @@ func (stats *Stats) Update(s *State) {
 	totalSpace := (float64)(s.Rows * s.Cols)
 	nonWater, observed, visited, food, enemyAnts, myHills, enemyHills := 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
-	for _, square := range s.Squares {
+	for _, square := range s.AllSquares {
 		nonWater++
 		if square.observed {
 			observed++
