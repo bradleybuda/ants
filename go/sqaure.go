@@ -104,8 +104,7 @@ func (square *Square) Observe(state *State) {
 }
 
 func (square *Square) HasFood() bool {
-	// TODO implement
-	return false;
+	return (square.item != nil) && (square.item.ItemType() == Food)
 }
 
 func (square *Square) HasHill() bool {
