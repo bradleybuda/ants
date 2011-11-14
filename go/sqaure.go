@@ -12,15 +12,15 @@ type Square struct {
 	item Item
 }
 
-type SquareSet map[Location]Square
+type SquareSet map[Location]*Square
+
+func (set *SquareSet) Add(square *Square) {
+	(*set)[square.location] = square
+}
 
 type Offset struct {
 	row int
 	col int
-}
-
-func (set *SquareSet) Add(square *Square) {
-	// TODO
 }
 
 var visibilityMask *vector.Vector = nil
