@@ -158,6 +158,8 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 
+		mb.logger.Printf("Orders: processing ant %+v", ant)
+
     // Find the best goal that this square knows about and is passable
 		square := ant.square
 		passable := square.Neighbors(s) // TODO - sqaure.blacklist
@@ -178,6 +180,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		ant.goal = bestGoal
+		mb.logger.Printf("Orders: best route for ant %v is %v", ant.id, bestRoute)
 		if len(bestRoute) > 0 {
 			ant.OrderTo(s, bestRoute[0])
 		}

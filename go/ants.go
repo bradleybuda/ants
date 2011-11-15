@@ -5,7 +5,7 @@ import (
 	"bufio"
 	"strconv"
 	"strings"
-//	"fmt"
+	"fmt"
 	"log"
 )
 
@@ -202,22 +202,9 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 	return nil
 }
 
-//Call IssueOrderRowCol to issue an order for an ant at (Row, Col)
-func (s *State) IssueOrderRowCol(Row, Col int, d Direction) {
-//	loc := s.Map.FromRowCol(Row, Col)
-//	dest := s.Map.Move(loc, d)
-//	s.Map.RemoveDestination(loc)
-//	s.Map.AddDestination(dest)
-//	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
-}
-
 //Call IssueOrderLoc to issue an order for an ant at loc
 func (s *State) IssueOrderLoc(loc Location, d Direction) {
-//	Row, Col := s.Map.FromLocation(loc)
-//	dest := s.Map.Move(loc, d)
-//	s.Map.RemoveDestination(loc)
-//	s.Map.AddDestination(dest)
-//	fmt.Fprintf(os.Stdout, "o %d %d %s\n", Row, Col, d)
+	fmt.Fprintf(os.Stdout, "o %d %d %s\n", loc.Row(s), loc.Col(s), d)
 }
 
 //endTurn is called by Loop, you don't need to call it.
