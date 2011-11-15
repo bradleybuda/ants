@@ -5,6 +5,13 @@ import "fmt"
 type Location int
 
 func NewLocation(state *State, row int, col int) Location {
+	if row < 0 {
+		panic("negative row!")
+	}
+	if col < 0 {
+		panic("negative col!")
+	}
+
 	return (Location)(((row % state.Rows) * state.Cols) + (col % state.Cols))
 }
 

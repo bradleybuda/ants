@@ -35,7 +35,7 @@ func (state *State) CreateSquares() {
 func (state *State) SquareAtLocation(loc Location) *Square {
 	square := state.AllSquares[loc]
 	if square == nil {
-		log.Panicf("No square at location %v. Map is %v", loc.RowColString(state), state.AllSquares)
+		log.Panicf("No square at location %v", loc.RowColString(state))
 	}
 	return square
 

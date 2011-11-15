@@ -123,6 +123,8 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// put neighboring squares at end of search queue
 		for _, neighbor := range square.Neighbors(s) {
+			mb.logger.Printf("BFS: looking for new search node at %v", neighbor)
+
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
 				continue
