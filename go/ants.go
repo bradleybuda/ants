@@ -70,7 +70,8 @@ func (s *State) Start() os.Error {
 		}
 	}
 
-
+	// TODO this init stuff should probably go elsewhere
+	s.CreateSquares()
 	s.Stats = new(Stats)
 
 	return nil
@@ -132,10 +133,11 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for food): \"%s\"", line)
 			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddFood(loc)
+
+			Row, _ := strconv.Atoi(words[1])
+			Col, _ := strconv.Atoi(words[2])
+			square := s.SquareAt(Row, Col)
+			NewFood(s, square)
 		case "w":
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)

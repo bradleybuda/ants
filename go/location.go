@@ -1,27 +1,29 @@
 package main
 
-type Location interface {
-	Row() int
-	Col() int
+import "fmt"
+
+type Location int
+
+func NewLocation(state *State, row int, col int) Location {
+	return (Location)(((row % state.Rows) * state.Cols) + (col % state.Cols))
 }
 
-type LocationImpl struct {
-	row int
-	col int
+func (l Location) Row(state *State) int {
+	return (int)(l) / state.Cols
 }
 
-func (li *LocationImpl) Row() int {
-	return li.row
+func (l Location) Col(state *State) int {
+	return (int)(l) % state.Cols
 }
 
-func (li *LocationImpl) Col() int {
-	return li.col
+func (l Location) RowColString(state *State) string {
+	return fmt.Sprintf("[%v, %v]", l.Row(state), l.Col(state))
 }
 
 // TODO i think i need to implement "equality" as well
 
 func AddOffsetToLocation(state *State, offset Offset, location Location) Location {
-	newRow := state.NormalizeRow(offset.row + location.Row())
-	newCol := state.NormalizeCol(offset.col + location.Col())
-	return &LocationImpl{newRow, newCol}
+	newRow := state.NormalizeRow(offset.row + location.Row(state))
+	newCol := state.NormalizeCol(offset.col + location.Col(state))
+	return NewLocation(state, newRow, newCol)
 }
