@@ -170,7 +170,8 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		for goal, route := range square.goals {
 			if goal.IsValid() {
-				if goal.Priority() > bestGoal.Priority() && passable.Member(route[0]) {
+				passableRoute := (len(route) == 0) || passable.Member(route[0])
+				if goal.Priority() > bestGoal.Priority() && passableRoute {
 					// TODO break priority ties by route length
 					bestGoal = goal
 					bestRoute = route
