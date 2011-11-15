@@ -25,9 +25,17 @@ type State struct {
 }
 
 func (s *State) NormalizeRow(row int) int {
-	return row % s.Rows
+	remainder := row % s.Rows
+	if remainder < 0 {
+		return remainder + s.Rows
+	}
+	return remainder
 }
 
 func (s *State) NormalizeCol(col int) int {
-	return col % s.Cols
+	remainder := col % s.Cols
+	if remainder < 0 {
+		return remainder + s.Cols
+	}
+	return remainder
 }
