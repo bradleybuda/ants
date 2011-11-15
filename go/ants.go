@@ -136,7 +136,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 			Row, _ := strconv.Atoi(words[1])
 			Col, _ := strconv.Atoi(words[2])
-			square := s.SquareAt(Row, Col)
+			square := s.SquareAtRowCol(Row, Col)
 			NewFood(s, square)
 		case "w":
 			if len(words) < 3 {

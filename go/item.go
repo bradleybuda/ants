@@ -26,6 +26,17 @@ type Food struct {
 	lastSeen int
 }
 
+func AllFood() vector.Vector {
+	results := vector.Vector{}
+	for _, item := range AllItems {
+		if (item.ItemType() == FoodType) {
+			results.Push(item)
+		}
+	}
+
+	return results
+}
+
 func NewFood(state *State, square *Square) *Item {
 	location := square.location
 

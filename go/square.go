@@ -32,13 +32,18 @@ func (state *State) CreateSquares() {
 	}
 }
 
-func (state *State) SquareAt(row int, col int) *Square {
-	loc := NewLocation(state, row, col)
+func (state *State) SquareAtLocation(loc Location) *Square {
 	square := state.AllSquares[loc]
 	if square == nil {
 		log.Panicf("No square at location %v. Map is %v", loc.RowColString(state), state.AllSquares)
 	}
 	return square
+
+}
+
+func (state *State) SquareAtRowCol(row int, col int) *Square {
+	loc := NewLocation(state, row, col)
+	return state.SquareAtLocation(loc)
 }
 
 type Offset struct {
@@ -142,6 +147,9 @@ func (square *Square) HasGoal(goal Goal) bool {
 	return false; // TODO implement
 }
 
-func (square *Square) Neighbors() []*Square {
-	return make([]*Square, 0); // TODO Implement
+func (square *Square) Neighbors(state *State) []*Square {
+	neighbors := make([]*Square, 4)
+	neighbors[0] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{-1, 0}, square.location))
+
+	return neighbors
 }

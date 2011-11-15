@@ -118,7 +118,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		square.goals[goal] = route
 
 		// put neighboring squares at end of search queue
-		for _, neighbor := range square.Neighbors() {
+		for _, neighbor := range square.Neighbors(s) {
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
 				continue
