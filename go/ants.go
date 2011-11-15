@@ -137,7 +137,11 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			Row, _ := strconv.Atoi(words[1])
 			Col, _ := strconv.Atoi(words[2])
 			square := s.SquareAtRowCol(Row, Col)
-			NewFood(s, square)
+			if square.HasFood() {
+				square.item.Sense(s)
+			} else {
+				s.NewFood(square)
+			}
 		case "w":
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)
@@ -150,43 +154,38 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
 			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			Ant, _ := strconv.Atoi(words[3])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddAnt(loc, Item(Ant))
+			Row, _ := strconv.Atoi(words[1])
+			Col, _ := strconv.Atoi(words[2])
+			Owner, _ := strconv.Atoi(words[3])
+			square := s.SquareAtRowCol(Row, Col)
 
-			//if it turns out that you don't actually use the visible radius for anything,
-			//feel free to comment this out. It's needed for the image debugging, though.
-//			if Item(Ant) == MY_ANT {
-//				s.Map.AddDestination(loc)
-//				s.Map.AddLand(loc, s.ViewRadius2)
-//			}
-		case "A":
-			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
+			if Owner == 0 {
+				ant := square.ant
+
+				if ant == nil {
+					if square.HasHill() && square.item.IsMine() {
+						ant = s.NewAnt(square)
+					} else {
+						panic("No record of my ant at this square")
+					}
+				}
+
+				// TODO mark at as dead if necessary
 			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			Ant, _ := strconv.Atoi(words[3])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddAnt(loc, Item(Ant).ToOccupied())
-
-			//if it turns out that you don't actually use the visible radius for anything,
-			//feel free to comment this out. It's needed for the image debugging, though.
-//			if Item(Ant) == MY_ANT {
-//				s.Map.AddDestination(loc)
-//				s.Map.AddLand(loc, s.ViewRadius2)
-//			}
 		case "h":
 			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
+				log.Panicf("Invalid command format (not enough parameters for hill): \"%s\"", line)
 			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			Ant, _ := strconv.Atoi(words[3])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddHill(loc, Item(Ant).ToUnoccupied())
+			Row, _ := strconv.Atoi(words[1])
+			Col, _ := strconv.Atoi(words[2])
+			Owner, _ := strconv.Atoi(words[3])
+			square := s.SquareAtRowCol(Row, Col)
+
+			if square.HasHill() {
+				square.item.Sense(s)
+			} else {
+				s.NewHill(Owner, square)
+			}
 		case "d":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)

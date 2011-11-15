@@ -12,6 +12,8 @@ type Square struct {
 	visited bool
 	item Item
 	goals map[Goal]Route
+	ant *Ant
+	nextAnt *Ant
 }
 
 type SquareSet map[Location]*Square
@@ -26,7 +28,7 @@ func (state *State) CreateSquares() {
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-			square := Square{loc, false, false, nil, make(map[Goal]Route)} // TODO square initializer
+			square := Square{loc, false, false, nil, make(map[Goal]Route), nil, nil} // TODO square initializer
 			state.AllSquares.Add(&square)
 		}
 	}
@@ -128,7 +130,6 @@ func (square *Square) VisibleSquares(state *State) vector.Vector {
 
 func (square *Square) Observe(state *State) {
 	square.observed = true
-	state.ObservedSquares.Add(square)
 }
 
 func (square *Square) HasFood() bool {

@@ -15,11 +15,11 @@ type State struct {
 	PlayerSeed    int64 //random player seed
 	Turn          int   //current turn number
 
+	NextAntId int
   LivingAnts vector.Vector
 	Stats *Stats
 
 	AllSquares SquareSet
-	ObservedSquares SquareSet
 
 	AllGoals vector.Vector
 }

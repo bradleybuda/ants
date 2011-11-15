@@ -49,7 +49,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	mb.logger.Printf("Updating visiblity for %v ants", s.LivingAnts.Len())
 	updated := 0
 	for _, elt := range s.LivingAnts {
-		ant := elt.(Ant)
+		ant := elt.(*Ant)
 		updated += ant.square.Visit(s)
 	}
 	mb.logger.Printf("Updated visiblity of %v squares", updated)
@@ -80,7 +80,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
   // Purge all invalid ant goals
   // TODO can push this down to the second loop
 	for _, elt := range s.LivingAnts {
-		ant := elt.(Ant)
+		ant := elt.(*Ant)
 		if (ant.goal != nil) && (!ant.goal.IsValid()) {
 			ant.goal = nil
 		}
@@ -127,11 +127,13 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
+				mb.logger.Printf("BFS: skipping unobserved square %v", neighbor)
 				continue
 			}
 
       // Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
+				mb.logger.Printf("BFS: skipping already visited square %v", neighbor)
 				continue
 			}
 
