@@ -144,12 +144,16 @@ func (square *Square) HasEnemyAnt() bool {
 }
 
 func (square *Square) HasGoal(goal Goal) bool {
-	return false; // TODO implement
+	_, ok := square.goals[goal]
+	return ok;
 }
 
 func (square *Square) Neighbors(state *State) []*Square {
 	neighbors := make([]*Square, 4)
-	neighbors[0] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{-1, 0}, square.location))
+	neighbors[0] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{-1,  0}, square.location))
+	neighbors[1] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 1,  0}, square.location))
+	neighbors[2] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 0, -1}, square.location))
+	neighbors[3] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 0,  1}, square.location))
 
 	return neighbors
 }

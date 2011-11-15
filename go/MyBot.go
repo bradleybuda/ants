@@ -63,9 +63,10 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
   // Make a shared list of goals used by all ants
   // TODO can skip this until we actually need to pick a goal
   mb.logger.Printf("Looking for goals")
+
 	goalStats := make(map[GoalType]*vector.Vector)
 	// group goals by type (TODO maybe we should just keep them in this form?)
-	for _, elt := range s.AllGoals {
+	for _, elt := range s.AllEat() { // TODO
 		goal := elt.(Goal)
 		goalType := goal.GoalType()
 		_, ok := goalStats[goalType]
@@ -74,7 +75,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 		goalStats[goalType].Push(goal)
 	}
-	mb.logger.Printf("Found initial goals: %v", goalStats)
+	mb.logger.Printf("Found initial goals: %v", goalStats) // TODO this is pretty useless right now
 
   // Purge all invalid ant goals
   // TODO can push this down to the second loop
@@ -86,12 +87,14 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	}
 
   // Figure out which goals are new and seed them into the DFS queue
-	for _, elt := range s.AllGoals {
+	for _, elt := range s.AllEat() { // TODO
 		goal := elt.(Goal)
 		square := goal.Square()
 		if !square.HasGoal(goal) {
 			route := make(Route, 0)
-			heap.Push(mb.goalQueue, SearchNode{square, goal, route})
+			newNode := SearchNode{square, goal, route}
+			mb.logger.Printf("BFS: Adding seed node: %+v", newNode)
+			heap.Push(mb.goalQueue, newNode)
 		}
 	}
 
@@ -107,6 +110,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		searchRadius = len(node.route)
 		searchCount++
 
+		mb.logger.Printf("BFS searching %+v", node)
 		square, goal, route := node.square, node.goal, node.route
 
     // Purge from queue if no longer valid
@@ -133,7 +137,9 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			newRoute = append(newRoute, square)
 			newRoute = append(newRoute, route...)
 
-			heap.Push(mb.goalQueue, SearchNode{neighbor, goal, newRoute})
+			newNode := SearchNode{neighbor, goal, newRoute}
+			mb.logger.Printf("BFS: Adding new node: %+v", newNode)
+			heap.Push(mb.goalQueue, newNode)
 		}
 
 		// TODO restore the plug goal?

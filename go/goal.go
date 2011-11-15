@@ -3,6 +3,10 @@ package main
 import "container/vector"
 
 type GoalType int
+const (
+	EatType = iota
+)
+
 
 type Goal interface {
 	GoalType() GoalType
@@ -15,6 +19,18 @@ type Eat struct {
 	food *Food
 }
 
+func (eat *Eat) GoalType() GoalType {
+	return EatType
+}
+
+func (eat *Eat) IsValid() bool {
+	return true // TODO
+}
+
+func (eat *Eat) Square() *Square {
+	return eat.destination
+}
+
 var EatIndex = make(map[*Square]map[*Food]*Eat)
 
 func (state *State) AllEat() vector.Vector {
@@ -23,16 +39,17 @@ func (state *State) AllEat() vector.Vector {
 	for _, f := range AllFood() {
 		food := f.(*Food)
 		for _, neighbor := range food.square.Neighbors(state) {
-			subMap, ok := EatIndex[neighbor]
-			if (ok) {
-				eat, _ := subMap[food]
-				if (eat == nil) {
-					eat = NewEat(neighbor, food)
-					subMap[food] = eat
-				}
-
-				results.Push(subMap[food])
+			_, ok := EatIndex[neighbor]
+			if (!ok) {
+				EatIndex[neighbor] = make(map[*Food]*Eat)
 			}
+
+			_, okAgain := EatIndex[neighbor][food]
+			if (!okAgain) {
+				EatIndex[neighbor][food] = NewEat(neighbor, food)
+			}
+
+			results.Push(EatIndex[neighbor][food])
 		}
 	}
 
@@ -40,6 +57,14 @@ func (state *State) AllEat() vector.Vector {
 }
 
 func NewEat(destination *Square, food *Food) *Eat {
+	if destination == nil {
+		panic("destination nil!")
+	}
+
+	if food == nil {
+		panic("food nil!")
+	}
+
 	eat := new(Eat)
 	eat.destination = destination
 	eat.food = food
