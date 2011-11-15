@@ -149,10 +149,11 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)
 			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddWater(loc)
+
+			Row, _ := strconv.Atoi(words[1])
+			Col, _ := strconv.Atoi(words[2])
+			square := s.SquareAtRowCol(Row, Col)
+			square.Destroy()
 		case "a":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
@@ -169,7 +170,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 					if square.HasHill() && square.item.IsMine() {
 						ant = s.NewAnt(square)
 					} else {
-						panic("No record of my ant at this square")
+						log.Panicf("No record of my ant at %v", square)
 					}
 				}
 

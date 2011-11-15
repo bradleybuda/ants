@@ -125,7 +125,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		square.goals[goal] = route
 
 		// put neighboring squares at end of search queue
-		for _, neighbor := range square.Neighbors(s) {
+		for _, neighbor := range square.Neighbors() {
 			//mb.logger.Printf("BFS: looking for new search node at %v", neighbor)
 
       // TODO instead of skipping, need to put this on a retry queue
@@ -162,7 +162,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
     // Find the best goal that this square knows about and is passable
 		square := ant.square
-		passable := square.Neighbors(s).Minus(square.Blacklist(s))
+		passable := square.Neighbors().Minus(square.Blacklist())
 
 		// Iterate through all the square's goals doing two things: purge invalids, and find highest priority
 		var bestGoal Goal = WanderInstance

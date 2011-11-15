@@ -47,7 +47,7 @@ func (state *State) AllEat() vector.Vector {
 
 	for _, f := range AllFood() {
 		food := f.(*Food)
-		for _, neighbor := range food.square.Neighbors(state) {
+		for _, neighbor := range food.square.Neighbors() {
 			_, ok := EatIndex[neighbor]
 			if (!ok) {
 				EatIndex[neighbor] = make(map[*Food]*Eat)
@@ -85,11 +85,11 @@ type Wander struct {}
 var WanderInstance = new(Wander)
 
 func (_ *Wander) pickRouteForAnt(state *State, ant *Ant) []*Square {
-	valid := ant.square.Neighbors(state) // TODO - blacklist
+	valid := ant.square.Neighbors().Minus(ant.square.Blacklist())
 	var randomSquare *Square = nil
 	maxScore := 0.0
 	for _, square := range valid {
-		score := rand.Float64() * (float64)(len(square.Neighbors(state)))
+		score := rand.Float64() * (float64)(len(square.Neighbors()))
 		if score > maxScore {
 			maxScore = score
 			randomSquare = square

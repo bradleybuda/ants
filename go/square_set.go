@@ -6,6 +6,10 @@ func (set SquareSet) Add(square *Square) {
 	set[square.location] = square
 }
 
+func (set SquareSet) Remove(square *Square) {
+	set[square.location] = nil, false
+}
+
 func (set SquareSet) Member(square *Square) bool {
 	_, ok := set[square.location]
 	return ok

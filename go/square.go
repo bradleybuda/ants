@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/vector"
-	"log"
 	"math"
 )
 
@@ -31,11 +30,7 @@ func (state *State) CreateSquares() {
 
 func (state *State) SquareAtLocation(loc Location) *Square {
 	square := state.AllSquares[loc]
-	if square == nil {
-		log.Panicf("No square at location %v", loc.RowColString(state))
-	}
 	return square
-
 }
 
 func (state *State) SquareAtRowCol(row int, col int) *Square {
@@ -58,10 +53,10 @@ type Offset struct {
 var visibilityMask *vector.Vector = nil
 
 var Directions = map[Direction] Offset {
-	East: Offset{ 0,  1},
+	North: Offset{-1,  0},
+	South: Offset{ 1,  0},
 	West: Offset{ 0, -1},
-	North: Offset{ 1,  0},
-	South: Offset{-1,  0},
+	East: Offset{ 0,  1},
 }
 
 func (square *Square) String() string {
@@ -173,25 +168,41 @@ func (square *Square) HasGoal(goal Goal) bool {
 	return ok;
 }
 
-func (square *Square) Neighbors(state *State) SquareSet {
+func (square *Square) Neighbors() SquareSet {
 	neighbors := make(SquareSet)
 	offsets := [4]Offset{Offset{-1, 0}, Offset{1, 0}, Offset{0, -1}, Offset{0, 1}}
 	for _, offset := range offsets {
-		location := AddOffsetToLocation(state, offset, square.location)
-		square := state.SquareAtLocation(location)
-		neighbors.Add(square)
+		location := AddOffsetToLocation(square.state, offset, square.location)
+		square := square.state.SquareAtLocation(location)
+		if square != nil {
+			neighbors.Add(square)
+		}
 	}
 
 	return neighbors
 }
 
-func (square *Square) Blacklist(state *State) SquareSet {
+func (square *Square) Blacklist() SquareSet {
 	blacklist := make(SquareSet)
-	for _, neighbor := range square.Neighbors(state) {
+	for _, neighbor := range square.Neighbors() {
 		if (neighbor.nextAnt != nil) || neighbor.HasFood() || (neighbor.HasHill() && neighbor.item.IsMine()) {
 			blacklist.Add(neighbor)
 		}
 	}
 
 	return blacklist
+}
+
+func (square *Square) Destroy() {
+	for _, neighbor := range square.Neighbors() {
+		neighbor.RemoveDeadNeighbor(square)
+	}
+
+	square.state.AllSquares.Remove(square)
+	// TODO remove from observed once we restore that index
+}
+
+func (square *Square) RemoveDeadNeighbor(neighbor *Square) {
+	// TODO if we start memoizing neighbors, implement this
+	// current a noop
 }
