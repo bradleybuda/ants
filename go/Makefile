@@ -11,6 +11,7 @@ GOFILES=\
 	main.go\
 	MyBot.go\
 	square.go\
+	square_set.go\
 	state.go\
 	stats.go\
 

@@ -26,6 +26,15 @@ func (state *State) NewAnt(square *Square) *Ant {
 	return ant
 }
 
+func (state *State) AdvanceAllAnts() {
+	for _, elt := range state.LivingAnts {
+		ant := elt.(*Ant)
+		ant.square = ant.nextSquare
+		ant.square.ant = ant
+		ant.square.nextAnt = ant
+	}
+}
+
 func (ant *Ant) OrderTo(state *State, adjacent *Square) {
 	ant.nextSquare = adjacent
 	ant.nextSquare.nextAnt = ant

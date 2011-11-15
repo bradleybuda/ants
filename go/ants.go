@@ -129,6 +129,9 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 				log.Panicf("Turn number out of sync, expected %v got %v", s.Turn+1, turn)
 			}
 			s.Turn = turn
+
+			s.ResetSquares()
+			s.AdvanceAllAnts()
 		case "f":
 			if len(words) < 3 {
 				log.Panicf("Invalid command format (not enough parameters for food): \"%s\"", line)

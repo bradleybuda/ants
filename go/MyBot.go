@@ -162,7 +162,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
     // Find the best goal that this square knows about and is passable
 		square := ant.square
-		passable := square.Neighbors(s) // TODO - sqaure.blacklist
+		passable := square.Neighbors(s).Minus(square.Blacklist(s))
 
 		// Iterate through all the square's goals doing two things: purge invalids, and find highest priority
 		var bestGoal Goal = WanderInstance
@@ -171,6 +171,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		for goal, route := range square.goals {
 			if goal.IsValid() {
 				if goal.Priority() > bestGoal.Priority() && passable.Member(route[0]) {
+					// TODO break priority ties by route length
 					bestGoal = goal
 					bestRoute = route
 				}

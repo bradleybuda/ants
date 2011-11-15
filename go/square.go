@@ -7,6 +7,7 @@ import (
 )
 
 type Square struct {
+	state *State
 	location Location
 	observed bool
 	visited bool
@@ -16,24 +17,13 @@ type Square struct {
 	nextAnt *Ant
 }
 
-type SquareSet map[Location]*Square
-
-func (set *SquareSet) Add(square *Square) {
-	(*set)[square.location] = square
-}
-
-func (set *SquareSet) Member(square *Square) bool {
-	_, ok := (*set)[square.location]
-	return ok
-}
-
 func (state *State) CreateSquares() {
 	state.AllSquares = make(SquareSet)
 
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-			square := Square{loc, false, false, nil, make(map[Goal]Route), nil, nil} // TODO square initializer
+			square := Square{state, loc, false, false, nil, make(map[Goal]Route), nil, nil} // TODO square initializer
 			state.AllSquares.Add(&square)
 		}
 	}
@@ -53,6 +43,13 @@ func (state *State) SquareAtRowCol(row int, col int) *Square {
 	return state.SquareAtLocation(loc)
 }
 
+func (state *State) ResetSquares() {
+	for _, square := range state.AllSquares {
+		square.nextAnt = nil
+		square.ant = nil
+	}
+}
+
 type Offset struct {
 	row int
 	col int
@@ -65,6 +62,10 @@ var Directions = map[Direction] Offset {
 	West: Offset{ 0, -1},
 	North: Offset{ 1,  0},
 	South: Offset{-1,  0},
+}
+
+func (square *Square) String() string {
+	return square.location.RowColString(square.state)
 }
 
 func (square *Square) DirectionTo(state *State, adjacent *Square) Direction {
@@ -182,4 +183,15 @@ func (square *Square) Neighbors(state *State) SquareSet {
 	}
 
 	return neighbors
+}
+
+func (square *Square) Blacklist(state *State) SquareSet {
+	blacklist := make(SquareSet)
+	for _, neighbor := range square.Neighbors(state) {
+		if (neighbor.nextAnt != nil) || neighbor.HasFood() || (neighbor.HasHill() && neighbor.item.IsMine()) {
+			blacklist.Add(neighbor)
+		}
+	}
+
+	return blacklist
 }
