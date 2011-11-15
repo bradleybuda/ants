@@ -22,6 +22,11 @@ func (set *SquareSet) Add(square *Square) {
 	(*set)[square.location] = square
 }
 
+func (set *SquareSet) Member(square *Square) bool {
+	_, ok := (*set)[square.location]
+	return ok
+}
+
 func (state *State) CreateSquares() {
 	state.AllSquares = make(SquareSet)
 
@@ -54,6 +59,24 @@ type Offset struct {
 }
 
 var visibilityMask *vector.Vector = nil
+
+var Directions = map[Direction] Offset {
+	East: Offset{ 0,  1},
+	West: Offset{ 0, -1},
+	North: Offset{ 1,  0},
+	South: Offset{-1,  0},
+}
+
+func (square *Square) DirectionTo(state *State, adjacent *Square) Direction {
+	for direction, offset := range Directions {
+		directionLoc := AddOffsetToLocation(state, offset, square.location)
+		if directionLoc == adjacent.location {
+			return direction
+		}
+	}
+
+	panic("Square is not adjacent!")
+}
 
 func Abs(i int) int {
 	if (i < 0) {
@@ -149,12 +172,14 @@ func (square *Square) HasGoal(goal Goal) bool {
 	return ok;
 }
 
-func (square *Square) Neighbors(state *State) []*Square {
-	neighbors := make([]*Square, 4)
-	neighbors[0] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{-1,  0}, square.location))
-	neighbors[1] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 1,  0}, square.location))
-	neighbors[2] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 0, -1}, square.location))
-	neighbors[3] = state.SquareAtLocation(AddOffsetToLocation(state, Offset{ 0,  1}, square.location))
+func (square *Square) Neighbors(state *State) SquareSet {
+	neighbors := make(SquareSet)
+	offsets := [4]Offset{Offset{-1, 0}, Offset{1, 0}, Offset{0, -1}, Offset{0, 1}}
+	for _, offset := range offsets {
+		location := AddOffsetToLocation(state, offset, square.location)
+		square := state.SquareAtLocation(location)
+		neighbors.Add(square)
+	}
 
 	return neighbors
 }

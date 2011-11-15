@@ -1,17 +1,21 @@
 package main
 
-import "container/vector"
+import (
+	"container/vector"
+	"rand"
+)
 
 type GoalType int
 const (
 	EatType = iota
+	WanderType
 )
 
 
 type Goal interface {
 	GoalType() GoalType
 	IsValid() bool
-	Square() *Square
+	Priority() float64
 }
 
 type Eat struct {
@@ -27,9 +31,14 @@ func (eat *Eat) IsValid() bool {
 	return true // TODO
 }
 
+func (eat *Eat) Priority() float64 {
+	return 9.9 // TODO
+}
+
 func (eat *Eat) Square() *Square {
 	return eat.destination
 }
+
 
 var EatIndex = make(map[*Square]map[*Food]*Eat)
 
@@ -69,4 +78,37 @@ func NewEat(destination *Square, food *Food) *Eat {
 	eat.destination = destination
 	eat.food = food
 	return eat
+}
+
+type Wander struct {}
+
+var WanderInstance = new(Wander)
+
+func (_ *Wander) pickRouteForAnt(state *State, ant *Ant) []*Square {
+	valid := ant.square.Neighbors(state) // TODO - blacklist
+	var randomSquare *Square = nil
+	maxScore := 0.0
+	for _, square := range valid {
+		score := rand.Float64() * (float64)(len(square.Neighbors(state)))
+		if score > maxScore {
+			maxScore = score
+			randomSquare = square
+		}
+	}
+
+	route := make([]*Square, 1)
+	route[0] = randomSquare
+	return route
+}
+
+func (*Wander) Priority() float64 {
+	return 0.0 // TODO
+}
+
+func (*Wander) GoalType() GoalType {
+	return WanderType
+}
+
+func (*Wander) IsValid() bool {
+	return false // only lasts one turn
 }

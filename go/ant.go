@@ -25,3 +25,10 @@ func (state *State) NewAnt(square *Square) *Ant {
 
 	return ant
 }
+
+func (ant *Ant) OrderTo(state *State, adjacent *Square) {
+	ant.nextSquare = adjacent
+	ant.nextSquare.nextAnt = ant
+
+	state.IssueOrderLoc(ant.square.location, ant.square.DirectionTo(state, adjacent))
+}

@@ -22,7 +22,10 @@ type GoalQueue struct {
 
 // i,j are indices of elements to compare
 func (gq *GoalQueue) Less(i, j int) bool {
-	return false; // TODO
+	iElt := gq.At(i).(SearchNode)
+	jElt := gq.At(j).(SearchNode)
+
+	return len(iElt.route) < len(jElt.route)
 }
 
 type MyBot struct {
@@ -88,12 +91,12 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
   // Figure out which goals are new and seed them into the DFS queue
 	for _, elt := range s.AllEat() { // TODO
-		goal := elt.(Goal)
-		square := goal.Square()
-		if !square.HasGoal(goal) {
+		eat := elt.(*Eat)
+		square := eat.Square()
+		if !square.HasGoal(eat) {
 			route := make(Route, 0)
-			newNode := SearchNode{square, goal, route}
-			mb.logger.Printf("BFS: Adding seed node: %+v", newNode)
+			newNode := SearchNode{square, eat, route}
+			//mb.logger.Printf("BFS: Adding seed node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
 	}
@@ -110,7 +113,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		searchRadius = len(node.route)
 		searchCount++
 
-		mb.logger.Printf("BFS searching %+v", node)
+		//mb.logger.Printf("BFS searching %+v", node)
 		square, goal, route := node.square, node.goal, node.route
 
     // Purge from queue if no longer valid
@@ -123,17 +126,17 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// put neighboring squares at end of search queue
 		for _, neighbor := range square.Neighbors(s) {
-			mb.logger.Printf("BFS: looking for new search node at %v", neighbor)
+			//mb.logger.Printf("BFS: looking for new search node at %v", neighbor)
 
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
-				mb.logger.Printf("BFS: skipping unobserved square %v", neighbor)
+				//mb.logger.Printf("BFS: skipping unobserved square %v", neighbor)
 				continue
 			}
 
       // Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
-				mb.logger.Printf("BFS: skipping already visited square %v", neighbor)
+				//mb.logger.Printf("BFS: skipping already visited square %v", neighbor)
 				continue
 			}
 
@@ -142,12 +145,42 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			newRoute = append(newRoute, route...)
 
 			newNode := SearchNode{neighbor, goal, newRoute}
-			mb.logger.Printf("BFS: Adding new node: %+v", newNode)
+			//mb.logger.Printf("BFS: Adding new node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
+	}
 
-		// TODO restore the plug goal?
-		mb.logger.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)
+	// TODO restore the plug goal?
+	mb.logger.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)
+
+  // Issue orders for each ant's best-available goal
+	// TODO this should be treated as a queue, not an array
+	for _, elt := range s.LivingAnts {
+		ant := elt.(*Ant)
+
+    // Find the best goal that this square knows about and is passable
+		square := ant.square
+		passable := square.Neighbors(s) // TODO - sqaure.blacklist
+
+		// Iterate through all the square's goals doing two things: purge invalids, and find highest priority
+		var bestGoal Goal = WanderInstance
+		bestRoute := WanderInstance.pickRouteForAnt(s, ant)
+
+		for goal, route := range square.goals {
+			if goal.IsValid() {
+				if goal.Priority() > bestGoal.Priority() && passable.Member(route[0]) {
+					bestGoal = goal
+					bestRoute = route
+				}
+			} else {
+				square.goals[goal] = nil, false
+			}
+		}
+
+		ant.goal = bestGoal
+		if len(bestRoute) > 0 {
+			ant.OrderTo(s, bestRoute[0])
+		}
 	}
 
 	//returning an error will halt the whole program!
