@@ -38,7 +38,7 @@ func (state *State) SquareAtRowCol(row int, col int) *Square {
 	return state.SquareAtLocation(loc)
 }
 
-func (state *State) ResetSquares() {
+func (state *State) ResetAntsOnSquares() {
 	for _, square := range state.AllSquares {
 		square.nextAnt = nil
 		square.ant = nil

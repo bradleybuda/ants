@@ -35,6 +35,7 @@ func (items ItemSet) DestroyUnsensed(state *State) {
 			if item.Exists() {
 				square.item = nil
 			}
+			Log.Printf("Item %v should be visible, but it's not there; must have disappeared", item)
 			items[square] = nil, false
 		}
 	}

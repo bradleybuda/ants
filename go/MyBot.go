@@ -83,7 +83,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 		if (ant.goal != nil) && (!ant.goal.IsValid()) {
-			Log.Printf("Goal %v for Ant %v became invalid, clearing it (maybe completed?)", ant.goal, ant)
+			Log.Printf("%v goal became invalid, clearing it (maybe completed?)", ant)
 			ant.goal = nil
 		}
 	}
@@ -163,7 +163,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 
-		Log.Printf("Orders: processing ant %+v", ant)
+		Log.Printf("Orders: updating orders for %v", ant)
 
     // Find the best goal that this square knows about and is passable
 		square := ant.square
@@ -187,7 +187,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		ant.goal = bestGoal
-		Log.Printf("Orders: best route for ant %v is %v", ant.id, bestRoute)
+		Log.Printf("Orders: new route for %v is %v", ant, bestRoute)
 		if len(bestRoute) > 0 {
 			ant.OrderTo(s, bestRoute[0])
 		}

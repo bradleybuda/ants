@@ -132,7 +132,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			}
 			s.Turn = turn
 
-			s.ResetSquares()
+			s.ResetAntsOnSquares()
 			s.AdvanceAllAnts()
 		case "f":
 			if len(words) < 3 {
