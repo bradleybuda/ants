@@ -102,6 +102,9 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 		}
 
 		if line == "go" {
+			// just about to start the turn, clean up unsensed items
+			AllItems.DestroyUnsensed(s)
+
 			b.DoTurn(s)
 
 			//end turn

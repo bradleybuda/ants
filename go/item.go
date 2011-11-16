@@ -16,9 +16,29 @@ type Item interface {
 	IsMine() bool
 	ItemType() ItemType
 	Sense(*State)
+	Exists() bool
+	TimeSinceLastSeen(*State) int
+	ObservableByAnyAnt() bool
 }
 
-var AllItems = make(map[*Square]Item)
+type ItemSet map[*Square]Item
+
+var AllItems = make(ItemSet)
+
+func (items ItemSet) DestroyUnsensed(state *State) {
+	for square, item := range items {
+		if item.TimeSinceLastSeen(state) == 0 {
+			continue
+		}
+
+		if item.ObservableByAnyAnt() {
+			if item.Exists() {
+				square.item = nil
+			}
+			items[square] = nil, false
+		}
+	}
+}
 
 type Food struct {
 	square *Square
@@ -50,14 +70,6 @@ func (state *State) NewFood(square *Square) *Food {
 	return newFood
 }
 
-func (food *Food) Sense(state *State) {
-	food.lastSeen = state.Turn
-}
-
-func (food *Food) ItemType() ItemType {
-	return FoodType
-}
-
 // These won't ever get called for Food - maybe need a sub-interface for OwnableItem?
 func (food *Food) IsMine() bool {
 	return false;
@@ -65,6 +77,32 @@ func (food *Food) IsMine() bool {
 
 func (food *Food) IsEnemy() bool {
 	return false;
+}
+
+func (food *Food) ItemType() ItemType {
+	return FoodType
+}
+
+func (food *Food) Sense(state *State) {
+	food.lastSeen = state.Turn
+}
+
+func (food *Food) Exists() bool {
+	return food.square.item == food
+}
+
+func (food *Food) TimeSinceLastSeen(state *State) int {
+	return state.Turn - food.lastSeen
+}
+
+func (food *Food) ObservableByAnyAnt() bool {
+	for _, square := range food.observableFrom {
+		if square.(*Square).ant != nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Hill struct {
@@ -105,3 +143,20 @@ func (hill *Hill) IsEnemy() bool {
 	return hill.owner != 0
 }
 
+func (hill *Hill) Exists() bool {
+	return hill.square.HasHill() && hill.square.item.(*Hill) == hill
+}
+
+func (hill *Hill) TimeSinceLastSeen(state *State) int {
+	return state.Turn - hill.lastSeen
+}
+
+func (hill *Hill) ObservableByAnyAnt() bool {
+	for _, square := range hill.observableFrom {
+		if square.(*Square).ant != nil {
+			return true
+		}
+	}
+
+	return false
+}

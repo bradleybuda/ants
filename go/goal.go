@@ -30,7 +30,7 @@ func (eat *Eat) GoalType() GoalType {
 }
 
 func (eat *Eat) IsValid() bool {
-	return true // TODO
+	return eat.food.Exists()
 }
 
 func (eat *Eat) Priority() float64 {
