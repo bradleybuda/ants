@@ -112,10 +112,11 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	Log.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
 
+	maxSearchRadius := 6 // hack to limit memory usage
 	searchRadius := 0
 	searchCount := 0
 
-	searchTimeNanos := (int64)(s.TurnTime * 700000)
+	searchTimeNanos := (int64)(s.TurnTime * 300000)
 	RunTimeoutLoop(searchTimeNanos, func() bool {
 		if mb.goalQueue.Len() == 0 {
 			return false // stop looping
@@ -123,7 +124,12 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// visit the first node in the queue and unpack it
 		node := heap.Pop(mb.goalQueue).(*SearchNode)
-		searchRadius = len(node.route)
+		nodeSearchRadius := len(node.route)
+		if nodeSearchRadius >= searchRadius {
+			searchRadius = nodeSearchRadius
+		} else {
+			panic("search is not breadth-first!")
+		}
 		searchCount++
 
 		//Log.Printf("BFS searching %+v", node)
@@ -136,6 +142,11 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// Record the route to this goal on the square
 		square.goals[goal] = route
+
+		// don't search any further from this node if we've maxed out
+		if nodeSearchRadius >= maxSearchRadius {
+			return true
+		}
 
 		// put neighboring squares at end of search queue
 		for _, neighbor := range square.Neighbors() {
