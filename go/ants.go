@@ -7,6 +7,7 @@ import (
 	"strings"
 	"fmt"
 	"log"
+	"rand"
 )
 
 //Bot interface defines what we need from a bot
@@ -61,7 +62,7 @@ func (s *State) Start() os.Error {
 			s.SpawnRadius2 = param
 		case "player_seed":
 			param64, _ := strconv.Atoi64(words[1])
-			s.PlayerSeed = param64
+			rand.Seed(param64)
 		case "turn":
 			s.Turn = param
 

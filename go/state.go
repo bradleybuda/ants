@@ -12,7 +12,6 @@ type State struct {
 	ViewRadius2   int   //view radius squared
 	AttackRadius2 int   //battle radius squared
 	SpawnRadius2  int   //spawn radius squared
-	PlayerSeed    int64 //random player seed
 	Turn          int   //current turn number
 
 	NextAntId int
