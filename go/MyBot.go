@@ -105,7 +105,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	searchRadius := 0
 	searchCount := 0
 
-	searchTimeNanos := (int64)(s.TurnTime * 700)
+	searchTimeNanos := (int64)(s.TurnTime * 700000)
 	RunTimeoutLoop(searchTimeNanos, func() bool {
 		if mb.goalQueue.Len() == 0 {
 			return false // stop looping
