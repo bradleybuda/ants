@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Ant struct {
 	id int
 	square *Square
@@ -36,6 +38,10 @@ func (state *State) AdvanceAllAnts() {
 }
 
 func (ant *Ant) OrderTo(state *State, adjacent *Square) {
+	if adjacent == nil {
+		panic(fmt.Sprintf("trying to order %v to nil square", ant))
+	}
+
 	ant.nextSquare = adjacent
 	ant.nextSquare.nextAnt = ant
 
