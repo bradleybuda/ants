@@ -109,17 +109,20 @@ func (_ *Wander) PickRouteForAnt(state *State, ant *Ant) []*Square {
 	}
 
 	var randomSquare *Square = nil
-	maxScore := 0.0
-	for _, square := range valid {
-		score := rand.Float64() * (float64)(len(square.Neighbors()))
+	maxScore := -1.0
+	for _, neighbor := range valid {
+		// better to wander to a square that's well-connected
+		neighborValid := neighbor.Neighbors().Minus(neighbor.Blacklist())
+		score := rand.Float64() * (float64)(len(neighborValid))
 
-		if !square.visited {
+		// best to wander to a square we've never visited
+		if !neighbor.visited {
 			score += 3.0
 		}
 
 		if score > maxScore {
 			maxScore = score
-			randomSquare = square
+			randomSquare = neighbor
 		}
 	}
 
