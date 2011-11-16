@@ -24,20 +24,7 @@ func (state *State) CreateSquares() {
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-
-			square := Square{
-				state,
-				loc,
-				false, // observed
-				false, // visited
-				nil,   // item
-				make(map[Goal]Route),  // goals
-				nil,  // ant
-				nil, // nextAnt
-				false, // neighborsCached
-				make(SquareSet), // neighbors
-			}
-
+			square := Square{state: state, location: loc, goals: make(map[Goal]Route), neighbors: make(SquareSet)}
 			state.AllSquares.Add(&square)
 		}
 	}
