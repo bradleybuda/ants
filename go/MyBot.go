@@ -111,8 +111,12 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	searchRadius := 0
 	searchCount := 0
 
-	// TODO keep track of time and don't loop forever
-	for mb.goalQueue.Len() > 0 {
+	searchTimeNanos := (int64)(s.TurnTime * 700)
+	RunTimeoutLoop(searchTimeNanos, func() bool {
+		if mb.goalQueue.Len() == 0 {
+			return false; // stop looping
+		}
+
     // visit the first node in the queue and unpack it
     node := heap.Pop(mb.goalQueue).(SearchNode)
 		searchRadius = len(node.route)
@@ -123,7 +127,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
     // Purge from queue if no longer valid
 		if !goal.IsValid() {
-			continue
+			return true; // next iteration
 		}
 
     // Record the route to this goal on the square
@@ -136,13 +140,13 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
 				//mb.logger.Printf("BFS: skipping unobserved square %v", neighbor)
-				continue
+				return true;
 			}
 
       // Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
 				//mb.logger.Printf("BFS: skipping already visited square %v", neighbor)
-				continue
+				return true;
 			}
 
 			newRoute := make(Route, 0)
@@ -153,7 +157,9 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			//mb.logger.Printf("BFS: Adding new node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
-	}
+
+		return true; // continue iterations
+	})
 
 	// TODO restore the plug goal?
 	mb.logger.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)

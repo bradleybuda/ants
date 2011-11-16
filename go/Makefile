@@ -14,5 +14,6 @@ GOFILES=\
 	square_set.go\
 	state.go\
 	stats.go\
+	timeout_loop.go\
 
 include $(GOROOT)/src/Make.cmd
