@@ -36,7 +36,7 @@ func (stats *Stats) Update(s *State) {
 		if square.HasEnemyAnt() {
 			enemyAnts++
 		}
-		myAnts := (float64)(s.LivingAnts.Len())
+		myAnts := (float64)(len(s.LivingAnts))
 
 		// These are rates instead of ratios to avoid low-precision
 		// floats. They're not intuitive - just statistics to be used by the

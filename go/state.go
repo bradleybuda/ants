@@ -1,7 +1,5 @@
 package main
 
-import "container/vector"
-
 //State keeps track of everything we need to know about the state of the game
 type State struct {
 	LoadTime      int //in milliseconds
@@ -15,7 +13,7 @@ type State struct {
 	Turn          int //current turn number
 
 	NextAntId  int
-	LivingAnts vector.Vector // maybe make me a hashset?
+	LivingAnts map[int]*Ant
 	Stats      *Stats
 
 	AllSquares SquareSet

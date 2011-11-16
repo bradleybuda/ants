@@ -14,23 +14,19 @@ func (state *State) NewAnt(square *Square) *Ant {
 		panic("nil square for ant")
 	}
 
-	ant := new(Ant)
-	ant.square = square
-	ant.nextSquare = square
+	ant := &Ant{state.NextAntId, square, square, nil}
+
+	state.NextAntId++
 	square.ant = ant
 	square.nextAnt = ant
 
-	ant.id = state.NextAntId
-	state.NextAntId++
-
-	state.LivingAnts.Push(ant)
+	state.LivingAnts[ant.id] = ant
 
 	return ant
 }
 
 func (state *State) AdvanceAllAnts() {
-	for _, elt := range state.LivingAnts {
-		ant := elt.(*Ant)
+	for _, ant := range state.LivingAnts {
 		ant.square = ant.nextSquare
 		ant.square.ant = ant
 		ant.square.nextAnt = ant
@@ -53,10 +49,5 @@ func (ant *Ant) OrderTo(state *State, adjacent *Square) {
 }
 
 func (ant *Ant) Die(state *State) {
-	for idx, elt := range state.LivingAnts {
-		if elt.(*Ant) == ant {
-			state.LivingAnts.Delete(idx)
-			return
-		}
-	}
+	state.LivingAnts[ant.id] = nil, false
 }

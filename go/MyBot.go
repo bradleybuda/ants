@@ -41,6 +41,7 @@ func NewBot(s *State) Bot {
 	mb.goalQueue = new(GoalQueue)
 	heap.Init(mb.goalQueue)
 	s.ObservedSquares = make(SquareSet)
+	s.LivingAnts = make(map[int]*Ant)
 
 	Log.Printf("New bot created!")
 
@@ -52,10 +53,9 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	Log.Printf("BFS: Search queue has size %v (from previous turns)", mb.goalQueue.Len())
 
 	// Update map visibility
-	Log.Printf("Updating visiblity for %v ants", s.LivingAnts.Len())
+	Log.Printf("Updating visiblity for %v ants", len(s.LivingAnts))
 	updated := 0
-	for _, elt := range s.LivingAnts {
-		ant := elt.(*Ant)
+	for _, ant := range s.LivingAnts {
 		updated += ant.square.Visit(s)
 	}
 	Log.Printf("Updated visiblity of %v squares", updated)
@@ -92,8 +92,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	// Purge all invalid ant goals
 	// TODO can push this down to the second loop
-	for _, elt := range s.LivingAnts {
-		ant := elt.(*Ant)
+	for _, ant := range s.LivingAnts {
 		if (ant.goal != nil) && (!ant.goal.IsValid()) {
 			Log.Printf("%v goal became invalid, clearing it (maybe completed?)", ant)
 			ant.goal = nil
@@ -173,9 +172,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	// Issue orders for each ant's best-available goal
 	// TODO this should be treated as a queue, not an array
-	for _, elt := range s.LivingAnts {
-		ant := elt.(*Ant)
-
+	for _, ant := range s.LivingAnts {
 		Log.Printf("Orders: updating orders for %v", ant)
 
 		// Find the best goal that this square knows about and is passable
