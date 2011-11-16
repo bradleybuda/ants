@@ -14,6 +14,8 @@ type Square struct {
 	goals map[Goal]Route
 	ant *Ant
 	nextAnt *Ant
+	neighborsCached bool
+	neighbors SquareSet
 }
 
 func (state *State) CreateSquares() {
@@ -22,7 +24,20 @@ func (state *State) CreateSquares() {
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-			square := Square{state, loc, false, false, nil, make(map[Goal]Route), nil, nil} // TODO square initializer
+
+			square := Square{
+				state,
+				loc,
+				false, // observed
+				false, // visited
+				nil,   // item
+				make(map[Goal]Route),  // goals
+				nil,  // ant
+				nil, // nextAnt
+				false, // neighborsCached
+				make(SquareSet), // neighbors
+			}
+
 			state.AllSquares.Add(&square)
 		}
 	}
@@ -169,17 +184,20 @@ func (square *Square) HasGoal(goal Goal) bool {
 }
 
 func (square *Square) Neighbors() SquareSet {
-	neighbors := make(SquareSet)
-	offsets := [4]Offset{Offset{-1, 0}, Offset{1, 0}, Offset{0, -1}, Offset{0, 1}}
-	for _, offset := range offsets {
-		location := AddOffsetToLocation(square.state, offset, square.location)
-		square := square.state.SquareAtLocation(location)
-		if square != nil {
-			neighbors.Add(square)
+	if !square.neighborsCached {
+		offsets := [4]Offset{Offset{-1, 0}, Offset{1, 0}, Offset{0, -1}, Offset{0, 1}}
+		for _, offset := range offsets {
+			location := AddOffsetToLocation(square.state, offset, square.location)
+			neighbor := square.state.SquareAtLocation(location)
+			if neighbor != nil {
+				square.neighbors.Add(neighbor)
+			}
 		}
+
+		square.neighborsCached = true
 	}
 
-	return neighbors
+	return square.neighbors
 }
 
 func (square *Square) Blacklist() SquareSet {
@@ -203,6 +221,7 @@ func (square *Square) Destroy() {
 }
 
 func (square *Square) RemoveDeadNeighbor(neighbor *Square) {
-	// TODO if we start memoizing neighbors, implement this
-	// current a noop
+	if square.neighborsCached {
+		square.neighbors.Remove(neighbor)
+	}
 }
