@@ -144,27 +144,26 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			// Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
 				//Log.Printf("BFS: skipping already visited square %v", neighbor)
-				return true
-			}
-
-			newRoute := make(Route, 0)
-			newRoute = append(newRoute, square)
-			newRoute = append(newRoute, route...)
-			newNode := &SearchNode{neighbor, goal, newRoute}
-
-			// Don't try to search nodes we haven't observed yet (they could
-			// be water). Instead, set aside those nodes and restore them
-			// later
-			if !neighbor.observed {
-				//Log.Printf("BFS: skipping unobserved square %v", neighbor)
-				neighbor.deferredSearchNodes = append(neighbor.deferredSearchNodes, newNode)
 			} else {
-				//Log.Printf("BFS: Adding new node: %+v", newNode)
-				heap.Push(mb.goalQueue, newNode)
+				newRoute := make(Route, 0)
+				newRoute = append(newRoute, square)
+				newRoute = append(newRoute, route...)
+				newNode := &SearchNode{neighbor, goal, newRoute}
+
+				// Don't try to search nodes we haven't observed yet (they could
+				// be water). Instead, set aside those nodes and restore them
+				// later
+				if !neighbor.observed {
+					//Log.Printf("BFS: skipping unobserved square %v", neighbor)
+					neighbor.deferredSearchNodes = append(neighbor.deferredSearchNodes, newNode)
+				} else {
+					//Log.Printf("BFS: Adding new node: %+v", newNode)
+					heap.Push(mb.goalQueue, newNode)
+				}
 			}
 		}
 
-		return true // continue iterations
+		return true // continue looping
 	})
 
 	// TODO restore the plug goal?
