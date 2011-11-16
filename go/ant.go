@@ -41,3 +41,12 @@ func (ant *Ant) OrderTo(state *State, adjacent *Square) {
 
 	state.IssueOrderLoc(ant.square.location, ant.square.DirectionTo(state, adjacent))
 }
+
+func (ant *Ant) Die(state *State) {
+	for idx, elt := range state.LivingAnts {
+		if elt.(*Ant) == ant {
+			state.LivingAnts.Delete(idx)
+			return
+		}
+	}
+}

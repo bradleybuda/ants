@@ -16,7 +16,7 @@ type State struct {
 	Turn          int   //current turn number
 
 	NextAntId int
-  LivingAnts vector.Vector
+  LivingAnts vector.Vector // maybe make me a hashset?
 	Stats *Stats
 
 	AllSquares SquareSet

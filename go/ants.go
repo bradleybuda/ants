@@ -112,7 +112,6 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 			BetweenTurnWork()
 
-//			s.Map.Reset()
 			continue
 		}
 
@@ -176,9 +175,35 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 						log.Panicf("No record of my ant at %v", square)
 					}
 				}
-
-				// TODO mark at as dead if necessary
 			}
+
+			// TODO track enemy ants
+
+		case "d":
+			if len(words) < 4 {
+				log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)
+			}
+			Row, _ := strconv.Atoi(words[1])
+			Col, _ := strconv.Atoi(words[2])
+			Owner, _ := strconv.Atoi(words[3])
+			square := s.SquareAtRowCol(Row, Col)
+
+			if Owner == 0 {
+				ant := square.ant
+
+				if ant == nil {
+					if square.HasHill() && square.item.IsMine() {
+						ant = s.NewAnt(square)
+					} else {
+						log.Panicf("No record of my ant at %v", square)
+					}
+				}
+
+				ant.Die(s)
+			}
+
+			// TODO track dead enemy ants
+
 		case "h":
 			if len(words) < 4 {
 				log.Panicf("Invalid command format (not enough parameters for hill): \"%s\"", line)
@@ -193,16 +218,6 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			} else {
 				s.NewHill(Owner, square)
 			}
-		case "d":
-			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)
-			}
-//			Row, _ := strconv.Atoi(words[1])
-//			Col, _ := strconv.Atoi(words[2])
-//			Ant, _ := strconv.Atoi(words[3])
-//			loc := s.Map.FromRowCol(Row, Col)
-//			s.Map.AddDeadAnt(loc, Item(Ant))
-
 		}
 	}
 
