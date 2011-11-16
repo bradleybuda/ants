@@ -37,6 +37,10 @@ func (state *State) AdvanceAllAnts() {
 	}
 }
 
+func (ant *Ant) String() string {
+	return fmt.Sprintf("Ant %v at %v pursuing %v", ant.id, ant.square, ant.goal)
+}
+
 func (ant *Ant) OrderTo(state *State, adjacent *Square) {
 	if adjacent == nil {
 		panic(fmt.Sprintf("trying to order %v to nil square", ant))
