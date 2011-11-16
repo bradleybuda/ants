@@ -41,6 +41,8 @@ func NewBot(s *State) Bot {
 	mb.goalQueue = new(GoalQueue)
 	heap.Init(mb.goalQueue)
 
+	Log.Printf("New bot created!")
+
 	return mb
 }
 
@@ -67,16 +69,12 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
   // TODO can skip this until we actually need to pick a goal
   Log.Printf("Looking for goals")
 
-	goalStats := make(map[GoalType]*vector.Vector)
+	goalStats := make(map[GoalType]int)
 	// group goals by type (TODO maybe we should just keep them in this form?)
 	for _, elt := range s.AllEat() { // TODO
 		goal := elt.(Goal)
 		goalType := goal.GoalType()
-		_, ok := goalStats[goalType]
-		if (!ok) {
-			goalStats[goalType] = new(vector.Vector)
-		}
-		goalStats[goalType].Push(goal)
+		goalStats[goalType]++
 	}
 	Log.Printf("Found initial goals: %v", goalStats) // TODO this is pretty useless right now
 
@@ -85,6 +83,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 		if (ant.goal != nil) && (!ant.goal.IsValid()) {
+			Log.Printf("Goal %v for Ant %v became invalid, clearing it (maybe completed?)", ant.goal, ant)
 			ant.goal = nil
 		}
 	}
