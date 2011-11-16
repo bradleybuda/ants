@@ -143,7 +143,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			Col, _ := strconv.Atoi(words[2])
 			square := s.SquareAtRowCol(Row, Col)
 			if square.HasFood() {
-				square.item.Sense(s)
+				square.item.Sense()
 			} else {
 				s.NewFood(square)
 			}
@@ -214,7 +214,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			square := s.SquareAtRowCol(Row, Col)
 
 			if square.HasHill() {
-				square.item.Sense(s)
+				square.item.Sense()
 			} else {
 				s.NewHill(Owner, square)
 			}

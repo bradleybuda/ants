@@ -16,27 +16,42 @@ type Item interface {
 	IsEnemy() bool
 	IsMine() bool
 	ItemType() ItemType
-	Sense(*State)
+	Sense()
 	Exists() bool
-	TimeSinceLastSeen(*State) int
+	TimeSinceLastSeen() int
 	ObservableByAnyAnt() bool
 }
 
 type BaseItem struct {
+	itemType       ItemType
+	state          *State
+	square         *Square
 	lastSeen       int
-	observableFrom SquareSet
+	observableFrom *SquareSet
 }
 
-func (item *BaseItem) Sense(state *State) {
-	item.lastSeen = state.Turn
+func (state *State) NewItem(itemType ItemType, square *Square) BaseItem {
+	return BaseItem{itemType, state, square, state.Turn, nil}
 }
 
-func (item *BaseItem) TimeSinceLastSeen(state *State) int {
-	return state.Turn - item.lastSeen
+func (item *BaseItem) ItemType() ItemType {
+	return item.itemType
+}
+
+func (item *BaseItem) Sense() {
+	item.lastSeen = item.state.Turn
+}
+
+func (item *BaseItem) TimeSinceLastSeen() int {
+	return item.state.Turn - item.lastSeen
 }
 
 func (item *BaseItem) ObservableByAnyAnt() bool {
-	for _, square := range item.observableFrom {
+	if item.observableFrom == nil {
+		item.observableFrom = item.square.VisibleSquares(item.state)
+	}
+
+	for _, square := range *item.observableFrom {
 		if square.ant != nil {
 			return true
 		}
@@ -51,7 +66,7 @@ var AllItems = make(ItemSet)
 
 func (items ItemSet) DestroyUnsensed(state *State) {
 	for square, item := range items {
-		if item.TimeSinceLastSeen(state) == 0 {
+		if item.TimeSinceLastSeen() == 0 {
 			continue
 		}
 
@@ -67,7 +82,6 @@ func (items ItemSet) DestroyUnsensed(state *State) {
 
 type Food struct {
 	BaseItem
-	square *Square
 }
 
 func AllFood() vector.Vector {
@@ -83,13 +97,10 @@ func AllFood() vector.Vector {
 
 func (state *State) NewFood(square *Square) *Food {
 	newFood := new(Food)
+	newFood.BaseItem = state.NewItem(FoodType, square)
 
-	newFood.square = square
 	square.item = newFood
-	newFood.observableFrom = square.VisibleSquares(state)
 	AllItems[square] = newFood
-
-	newFood.Sense(state)
 
 	return newFood
 }
@@ -103,10 +114,6 @@ func (food *Food) IsEnemy() bool {
 	return false
 }
 
-func (food *Food) ItemType() ItemType {
-	return FoodType
-}
-
 func (food *Food) Exists() bool {
 	return food.square.item == food
 }
@@ -114,26 +121,17 @@ func (food *Food) Exists() bool {
 type Hill struct {
 	BaseItem
 	owner  int
-	square *Square
 }
 
 func (state *State) NewHill(owner int, square *Square) *Hill {
 	newHill := new(Hill)
+	newHill.BaseItem = state.NewItem(HillType, square)
 
 	newHill.owner = owner
-
-	newHill.square = square
 	square.item = newHill
-	newHill.observableFrom = square.VisibleSquares(state)
 	AllItems[square] = newHill
 
-	newHill.Sense(state)
-
 	return newHill
-}
-
-func (food *Hill) ItemType() ItemType {
-	return HillType
 }
 
 func (hill *Hill) IsMine() bool {
@@ -145,5 +143,5 @@ func (hill *Hill) IsEnemy() bool {
 }
 
 func (hill *Hill) Exists() bool {
-	return hill.square.HasHill() && hill.square.item.(*Hill) == hill
+	return hill.square.item == hill
 }
