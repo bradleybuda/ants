@@ -16,6 +16,7 @@ type Square struct {
 	nextAnt         *Ant
 	neighborsCached bool
 	neighbors       SquareSet
+	deferredSearchNodes []*SearchNode
 }
 
 func (state *State) CreateSquares() {
@@ -24,7 +25,7 @@ func (state *State) CreateSquares() {
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-			square := Square{state: state, location: loc, goals: make(map[Goal]Route), neighbors: make(SquareSet)}
+			square := Square{state: state, location: loc, goals: make(map[Goal]Route), neighbors: make(SquareSet), deferredSearchNodes: make([]*SearchNode, 0)}
 			state.AllSquares.Add(&square)
 		}
 	}

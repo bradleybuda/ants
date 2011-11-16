@@ -15,7 +15,7 @@ type SearchNode struct {
 	route  Route
 }
 
-func (sn SearchNode) String() string {
+func (sn *SearchNode) String() string {
 	return fmt.Sprintf("[Search for a path to %v at %v with existing route %v]", sn.goal, sn.square, sn.route)
 }
 
@@ -25,8 +25,8 @@ type GoalQueue struct {
 
 // i,j are indices of elements to compare
 func (gq *GoalQueue) Less(i, j int) bool {
-	iElt := gq.At(i).(SearchNode)
-	jElt := gq.At(j).(SearchNode)
+	iElt := gq.At(i).(*SearchNode)
+	jElt := gq.At(j).(*SearchNode)
 
 	return len(iElt.route) < len(jElt.route)
 }
@@ -49,7 +49,7 @@ func NewBot(s *State) Bot {
 
 //DoTurn is where you should do your bot's actual work.
 func (mb *MyBot) DoTurn(s *State) os.Error {
-	Log.Printf("Search queue has size %v (from previous turns)", mb.goalQueue.Len())
+	Log.Printf("BFS: Search queue has size %v (from previous turns)", mb.goalQueue.Len())
 
 	// Update map visibility
 	Log.Printf("Updating visiblity for %v ants", s.LivingAnts.Len())
@@ -60,7 +60,18 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	}
 	Log.Printf("Updated visiblity of %v squares", updated)
 
-	// TODO restore any newly visible squares to the goalQueue if they were previously set aside
+	// restore any newly visible squares to the goalQueue if they were previously set aside
+	restoredSearchNodes := 0
+	// TODO have an index of newly observed squares to avoid walking all?
+	for _, square := range s.ObservedSquares {
+		for _, searchNode := range square.deferredSearchNodes {
+			heap.Push(mb.goalQueue, searchNode)
+			restoredSearchNodes++
+		}
+
+		square.deferredSearchNodes = make([]*SearchNode, 0)
+	}
+	Log.Printf("BFS: Restored %v deferred search nodes from previous turns", restoredSearchNodes)
 
 	// Compute game statistics for weighting model
 	s.Stats.Update(s)
@@ -94,7 +105,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		square := goal.Destination()
 		if !square.HasGoal(goal) {
 			route := make(Route, 0)
-			newNode := SearchNode{square, goal, route}
+			newNode := &SearchNode{square, goal, route}
 			//Log.Printf("BFS: Adding seed node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
@@ -112,7 +123,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		// visit the first node in the queue and unpack it
-		node := heap.Pop(mb.goalQueue).(SearchNode)
+		node := heap.Pop(mb.goalQueue).(*SearchNode)
 		searchRadius = len(node.route)
 		searchCount++
 
@@ -131,12 +142,6 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		for _, neighbor := range square.Neighbors() {
 			//Log.Printf("BFS: looking for new search node at %v", neighbor)
 
-			// TODO instead of skipping, need to put this on a retry queue
-			if !neighbor.observed {
-				//Log.Printf("BFS: skipping unobserved square %v", neighbor)
-				return true
-			}
-
 			// Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
 				//Log.Printf("BFS: skipping already visited square %v", neighbor)
@@ -146,10 +151,18 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			newRoute := make(Route, 0)
 			newRoute = append(newRoute, square)
 			newRoute = append(newRoute, route...)
+			newNode := &SearchNode{neighbor, goal, newRoute}
 
-			newNode := SearchNode{neighbor, goal, newRoute}
-			//Log.Printf("BFS: Adding new node: %+v", newNode)
-			heap.Push(mb.goalQueue, newNode)
+			// Don't try to search nodes we haven't observed yet (they could
+			// be water). Instead, set aside those nodes and restore them
+			// later
+			if !neighbor.observed {
+				//Log.Printf("BFS: skipping unobserved square %v", neighbor)
+				neighbor.deferredSearchNodes = append(neighbor.deferredSearchNodes, newNode)
+			} else {
+				//Log.Printf("BFS: Adding new node: %+v", newNode)
+				heap.Push(mb.goalQueue, newNode)
+			}
 		}
 
 		return true // continue iterations
