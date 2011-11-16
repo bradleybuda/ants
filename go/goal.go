@@ -2,7 +2,8 @@ package main
 
 import (
 	"container/vector"
-	"rand"
+	"fmt"
+	"rand" // TODO seed
 )
 
 type GoalType int
@@ -16,6 +17,7 @@ type Goal interface {
 	GoalType() GoalType
 	IsValid() bool
 	Priority() float64
+	String() string
 }
 
 type Eat struct {
@@ -39,6 +41,9 @@ func (eat *Eat) Square() *Square {
 	return eat.destination
 }
 
+func (eat *Eat) String() string {
+	return fmt.Sprintf("[Eat food at %v from %v]", eat.food.square, eat.destination)
+}
 
 var EatIndex = make(map[*Square]map[*Food]*Eat)
 
@@ -111,4 +116,8 @@ func (*Wander) GoalType() GoalType {
 
 func (*Wander) IsValid() bool {
 	return false // only lasts one turn
+}
+
+func (*Wander) String() string {
+	return "[Wander randomly]"
 }

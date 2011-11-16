@@ -3,6 +3,7 @@ package main
 import (
 	"container/vector"
 	"container/heap"
+	"fmt"
 	"log"
 	"os"
 	"syslog"
@@ -14,6 +15,10 @@ type SearchNode struct {
 	square *Square
 	goal Goal
 	route Route
+}
+
+func (sn SearchNode) String() string {
+	return fmt.Sprintf("[Search for a path to %v at %v with existing route %v]", sn.goal, sn.square, sn.route);
 }
 
 type GoalQueue struct {
