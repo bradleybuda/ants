@@ -1,13 +1,13 @@
 package main
 
 type Stats struct {
-	water float64
-	observed float64
-	visited float64
-	food float64
-	myAnts float64
-	enemyAnts float64
-	myHills float64
+	water      float64
+	observed   float64
+	visited    float64
+	food       float64
+	myAnts     float64
+	enemyAnts  float64
+	myHills    float64
 	enemyHills float64
 }
 
@@ -24,23 +24,23 @@ func (stats *Stats) Update(s *State) {
 		if square.visited {
 			visited++
 		}
-		if (square.HasFood()) {
+		if square.HasFood() {
 			food++
 		}
-		if (square.HasHill() && square.item.IsEnemy()) {
+		if square.HasHill() && square.item.IsEnemy() {
 			enemyHills++
 		}
-		if (square.HasHill() && square.item.IsMine()) {
+		if square.HasHill() && square.item.IsMine() {
 			myHills++
 		}
-		if (square.HasEnemyAnt()) {
+		if square.HasEnemyAnt() {
 			enemyAnts++
 		}
 		myAnts := (float64)(s.LivingAnts.Len())
 
 		// These are rates instead of ratios to avoid low-precision
-    // floats. They're not intuitive - just statistics to be used by the
-    // algorithm
+		// floats. They're not intuitive - just statistics to be used by the
+		// algorithm
 		stats.water = totalSpace / (totalSpace - nonWater)
 		stats.observed = totalSpace / observed
 		stats.visited = totalSpace / visited

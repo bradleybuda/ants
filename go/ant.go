@@ -3,14 +3,14 @@ package main
 import "fmt"
 
 type Ant struct {
-	id int
-	square *Square
+	id         int
+	square     *Square
 	nextSquare *Square
-	goal Goal
+	goal       Goal
 }
 
 func (state *State) NewAnt(square *Square) *Ant {
-	if (square == nil) {
+	if square == nil {
 		panic("nil square for ant")
 	}
 

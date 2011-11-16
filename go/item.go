@@ -5,6 +5,7 @@ import (
 )
 
 type ItemType int
+
 const (
 	FoodType = iota
 	HillType
@@ -22,7 +23,7 @@ type Item interface {
 }
 
 type BaseItem struct {
-	lastSeen int
+	lastSeen       int
 	observableFrom SquareSet
 }
 
@@ -43,7 +44,6 @@ func (item *BaseItem) ObservableByAnyAnt() bool {
 
 	return false
 }
-
 
 type ItemSet map[*Square]Item
 
@@ -73,7 +73,7 @@ type Food struct {
 func AllFood() vector.Vector {
 	results := vector.Vector{}
 	for _, item := range AllItems {
-		if (item.ItemType() == FoodType) {
+		if item.ItemType() == FoodType {
 			results.Push(item)
 		}
 	}
@@ -96,11 +96,11 @@ func (state *State) NewFood(square *Square) *Food {
 
 // These won't ever get called for Food - maybe need a sub-interface for OwnableItem?
 func (food *Food) IsMine() bool {
-	return false;
+	return false
 }
 
 func (food *Food) IsEnemy() bool {
-	return false;
+	return false
 }
 
 func (food *Food) ItemType() ItemType {
@@ -113,7 +113,7 @@ func (food *Food) Exists() bool {
 
 type Hill struct {
 	BaseItem
-	owner int
+	owner  int
 	square *Square
 }
 

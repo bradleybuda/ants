@@ -6,16 +6,16 @@ import (
 )
 
 type Square struct {
-	state *State
-	location Location
-	observed bool
-	visited bool
-	item Item
-	goals map[Goal]Route
-	ant *Ant
-	nextAnt *Ant
+	state           *State
+	location        Location
+	observed        bool
+	visited         bool
+	item            Item
+	goals           map[Goal]Route
+	ant             *Ant
+	nextAnt         *Ant
 	neighborsCached bool
-	neighbors SquareSet
+	neighbors       SquareSet
 }
 
 func (state *State) CreateSquares() {
@@ -54,11 +54,11 @@ type Offset struct {
 
 var visibilityMask *vector.Vector = nil
 
-var Directions = map[Direction] Offset {
-	North: Offset{-1,  0},
-	South: Offset{ 1,  0},
-	West: Offset{ 0, -1},
-	East: Offset{ 0,  1},
+var Directions = map[Direction]Offset{
+	North: Offset{-1, 0},
+	South: Offset{1, 0},
+	West:  Offset{0, -1},
+	East:  Offset{0, 1},
 }
 
 func (square *Square) String() string {
@@ -77,7 +77,7 @@ func (square *Square) DirectionTo(state *State, adjacent *Square) Direction {
 }
 
 func Abs(i int) int {
-	if (i < 0) {
+	if i < 0 {
 		return -1 * i
 	}
 
@@ -85,7 +85,7 @@ func Abs(i int) int {
 }
 
 func Min(i, j int) int {
-	if (i < j) {
+	if i < j {
 		return i
 	}
 
@@ -94,10 +94,10 @@ func Min(i, j int) int {
 
 func Distance2(state *State, r1, c1, r2, c2 int) int {
 	rdelt := Abs(r1 - r2)
-  cdelt := Abs(c1 - c2)
-  dr := Min(rdelt, state.Rows - rdelt)
-  dc := Min(cdelt, state.Cols - cdelt)
-  return dr*dr + dc*dc
+	cdelt := Abs(c1 - c2)
+	dr := Min(rdelt, state.Rows-rdelt)
+	dc := Min(cdelt, state.Cols-cdelt)
+	return dr*dr + dc*dc
 }
 
 func (square *Square) Visit(state *State) int {
@@ -124,8 +124,8 @@ func (square *Square) VisibleSquares(state *State) SquareSet {
 		visibilityMask = new(vector.Vector)
 
 		viewRadius := (int)(math.Ceil(math.Sqrt((float64)(state.ViewRadius2))))
-		for rowOffset := -1 * viewRadius ; rowOffset <= viewRadius; rowOffset++ {
-			for colOffset := -1 * viewRadius ; colOffset <= viewRadius; colOffset++ {
+		for rowOffset := -1 * viewRadius; rowOffset <= viewRadius; rowOffset++ {
+			for colOffset := -1 * viewRadius; colOffset <= viewRadius; colOffset++ {
 				if Distance2(state, 0, 0, rowOffset, colOffset) < state.ViewRadius2 {
 					visibilityMask.Push(Offset{rowOffset, colOffset})
 				}
@@ -166,7 +166,7 @@ func (square *Square) HasEnemyAnt() bool {
 
 func (square *Square) HasGoal(goal Goal) bool {
 	_, ok := square.goals[goal]
-	return ok;
+	return ok
 }
 
 func (square *Square) Neighbors() SquareSet {

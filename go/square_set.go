@@ -19,7 +19,7 @@ func (set SquareSet) Minus(otherSet SquareSet) SquareSet {
 	result := make(SquareSet)
 	for k, v := range set {
 		_, inOther := otherSet[k]
-		if (!inOther) {
+		if !inOther {
 			result[k] = v
 		}
 	}

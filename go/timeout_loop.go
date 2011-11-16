@@ -10,9 +10,9 @@ func RunTimeoutLoop(durationNanos int64, body func() bool) {
 	for body() {
 		iterations++
 		if time.Nanoseconds() > cutoff {
-			break;
+			break
 		}
 	}
 
-	Log.Printf("Loop completed %v iterations in %v nanos", iterations, time.Nanoseconds() - startNanos)
+	Log.Printf("Loop completed %v iterations in %v nanos", iterations, time.Nanoseconds()-startNanos)
 }

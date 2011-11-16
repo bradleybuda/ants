@@ -7,6 +7,7 @@ import (
 )
 
 type GoalType int
+
 const (
 	EatType = iota
 	WanderType
@@ -21,7 +22,7 @@ type Goal interface {
 
 type Eat struct {
 	destination *Square
-	food *Food
+	food        *Food
 }
 
 func (eat *Eat) GoalType() GoalType {
@@ -53,12 +54,12 @@ func (state *State) AllEat() vector.Vector {
 		food := f.(*Food)
 		for _, neighbor := range food.square.Neighbors() {
 			_, ok := EatIndex[neighbor]
-			if (!ok) {
+			if !ok {
 				EatIndex[neighbor] = make(map[*Food]*Eat)
 			}
 
 			_, okAgain := EatIndex[neighbor][food]
-			if (!okAgain) {
+			if !okAgain {
 				EatIndex[neighbor][food] = NewEat(neighbor, food)
 			}
 
@@ -84,7 +85,7 @@ func NewEat(destination *Square, food *Food) *Eat {
 	return eat
 }
 
-type Wander struct {}
+type Wander struct{}
 
 var WanderInstance = new(Wander)
 

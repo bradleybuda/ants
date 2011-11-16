@@ -5,7 +5,9 @@ package main
 
 import "os"
 import "log"
-type DummyWriter struct {}
+
+type DummyWriter struct{}
+
 func (*DummyWriter) Write(p []byte) (n int, err os.Error) {
 	return len(p), nil
 }
