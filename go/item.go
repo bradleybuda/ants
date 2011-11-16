@@ -1,9 +1,5 @@
 package main
 
-import (
-	"container/vector"
-)
-
 type ItemType int
 
 const (
@@ -84,11 +80,11 @@ type Food struct {
 	BaseItem
 }
 
-func AllFood() vector.Vector {
-	results := vector.Vector{}
+func AllFood() []*Food {
+	results := make([]*Food, 0)
 	for _, item := range AllItems {
 		if item.ItemType() == FoodType {
-			results.Push(item)
+			results = append(results, item.(*Food))
 		}
 	}
 

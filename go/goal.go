@@ -63,8 +63,7 @@ var EatIndex = make(map[*Square]map[*Food]*Eat)
 func (state *State) AllEat() []Goal {
 	results := make([]Goal, 0)
 
-	for _, f := range AllFood() {
-		food := f.(*Food)
+	for _, food := range AllFood() {
 		for _, neighbor := range food.square.Neighbors() {
 			_, ok := EatIndex[neighbor]
 			if !ok {
