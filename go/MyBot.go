@@ -4,9 +4,7 @@ import (
 	"container/vector"
 	"container/heap"
 	"fmt"
-	"log"
 	"os"
-	"syslog"
 )
 
 type Route []*Square
@@ -35,7 +33,6 @@ func (gq *GoalQueue) Less(i, j int) bool {
 
 type MyBot struct {
 	goalQueue *GoalQueue
-	logger *log.Logger
 }
 
 //NewBot creates a new instance of your bot
@@ -44,33 +41,31 @@ func NewBot(s *State) Bot {
 	mb.goalQueue = new(GoalQueue)
 	heap.Init(mb.goalQueue)
 
-	mb.logger = syslog.NewLogger(syslog.LOG_DEBUG, 0)
-
 	return mb
 }
 
 //DoTurn is where you should do your bot's actual work.
 func (mb *MyBot) DoTurn(s *State) os.Error {
-	mb.logger.Printf("Search queue has size %v (from previous turns)", mb.goalQueue.Len())
+	Log.Printf("Search queue has size %v (from previous turns)", mb.goalQueue.Len())
 
 	// Update map visibility
-	mb.logger.Printf("Updating visiblity for %v ants", s.LivingAnts.Len())
+	Log.Printf("Updating visiblity for %v ants", s.LivingAnts.Len())
 	updated := 0
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 		updated += ant.square.Visit(s)
 	}
-	mb.logger.Printf("Updated visiblity of %v squares", updated)
+	Log.Printf("Updated visiblity of %v squares", updated)
 
 	// TODO restore any newly visible squares to the goalQueue if they were previously set aside
 
 	// Compute game statistics for weighting model
 	s.Stats.Update(s)
-	mb.logger.Printf("Current turn statistics are %+v", s.Stats)
+	Log.Printf("Current turn statistics are %+v", s.Stats)
 
   // Make a shared list of goals used by all ants
   // TODO can skip this until we actually need to pick a goal
-  mb.logger.Printf("Looking for goals")
+  Log.Printf("Looking for goals")
 
 	goalStats := make(map[GoalType]*vector.Vector)
 	// group goals by type (TODO maybe we should just keep them in this form?)
@@ -83,7 +78,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 		goalStats[goalType].Push(goal)
 	}
-	mb.logger.Printf("Found initial goals: %v", goalStats) // TODO this is pretty useless right now
+	Log.Printf("Found initial goals: %v", goalStats) // TODO this is pretty useless right now
 
   // Purge all invalid ant goals
   // TODO can push this down to the second loop
@@ -101,12 +96,12 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		if !square.HasGoal(eat) {
 			route := make(Route, 0)
 			newNode := SearchNode{square, eat, route}
-			//mb.logger.Printf("BFS: Adding seed node: %+v", newNode)
+			//Log.Printf("BFS: Adding seed node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
 	}
 
-	mb.logger.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
+	Log.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
 
 	searchRadius := 0
 	searchCount := 0
@@ -122,7 +117,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		searchRadius = len(node.route)
 		searchCount++
 
-		//mb.logger.Printf("BFS searching %+v", node)
+		//Log.Printf("BFS searching %+v", node)
 		square, goal, route := node.square, node.goal, node.route
 
     // Purge from queue if no longer valid
@@ -135,17 +130,17 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// put neighboring squares at end of search queue
 		for _, neighbor := range square.Neighbors() {
-			//mb.logger.Printf("BFS: looking for new search node at %v", neighbor)
+			//Log.Printf("BFS: looking for new search node at %v", neighbor)
 
       // TODO instead of skipping, need to put this on a retry queue
 			if !neighbor.observed {
-				//mb.logger.Printf("BFS: skipping unobserved square %v", neighbor)
+				//Log.Printf("BFS: skipping unobserved square %v", neighbor)
 				return true;
 			}
 
       // Don't enqueue the neighbor if we've already visited it for this goal
 			if neighbor.HasGoal(goal) {
-				//mb.logger.Printf("BFS: skipping already visited square %v", neighbor)
+				//Log.Printf("BFS: skipping already visited square %v", neighbor)
 				return true;
 			}
 
@@ -154,7 +149,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 			newRoute = append(newRoute, route...)
 
 			newNode := SearchNode{neighbor, goal, newRoute}
-			//mb.logger.Printf("BFS: Adding new node: %+v", newNode)
+			//Log.Printf("BFS: Adding new node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}
 
@@ -162,14 +157,14 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	})
 
 	// TODO restore the plug goal?
-	mb.logger.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)
+	Log.Printf("BFS: done searching. Search count was %v, radius was at most %v square from goals", searchCount, searchRadius)
 
   // Issue orders for each ant's best-available goal
 	// TODO this should be treated as a queue, not an array
 	for _, elt := range s.LivingAnts {
 		ant := elt.(*Ant)
 
-		mb.logger.Printf("Orders: processing ant %+v", ant)
+		Log.Printf("Orders: processing ant %+v", ant)
 
     // Find the best goal that this square knows about and is passable
 		square := ant.square
@@ -193,7 +188,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		ant.goal = bestGoal
-		mb.logger.Printf("Orders: best route for ant %v is %v", ant.id, bestRoute)
+		Log.Printf("Orders: best route for ant %v is %v", ant.id, bestRoute)
 		if len(bestRoute) > 0 {
 			ant.OrderTo(s, bestRoute[0])
 		}

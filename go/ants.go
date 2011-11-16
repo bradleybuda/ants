@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 	"fmt"
-	"log"
 	"rand"
 )
 
@@ -67,7 +66,7 @@ func (s *State) Start() os.Error {
 			s.Turn = param
 
 		default:
-			log.Panicf("unknown command: %s", line)
+			Log.Panicf("unknown command: %s", line)
 		}
 	}
 
@@ -93,7 +92,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			if err == os.EOF {
 				return err
 			}
-			log.Panicf("ReadString returns an error: %s", err)
+			Log.Panicf("ReadString returns an error: %s", err)
 			return err
 		}
 		line = line[:len(line)-1] //remove the delimiter
@@ -122,14 +121,14 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 		words := strings.SplitN(line, " ", 5)
 		if len(words) < 2 {
-			log.Panicf("Invalid command format: \"%s\"", line)
+			Log.Panicf("Invalid command format: \"%s\"", line)
 		}
 
 		switch words[0] {
 		case "turn":
 			turn, _ := strconv.Atoi(words[1])
 			if turn != s.Turn+1 {
-				log.Panicf("Turn number out of sync, expected %v got %v", s.Turn+1, turn)
+				Log.Panicf("Turn number out of sync, expected %v got %v", s.Turn+1, turn)
 			}
 			s.Turn = turn
 
@@ -137,7 +136,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			s.AdvanceAllAnts()
 		case "f":
 			if len(words) < 3 {
-				log.Panicf("Invalid command format (not enough parameters for food): \"%s\"", line)
+				Log.Panicf("Invalid command format (not enough parameters for food): \"%s\"", line)
 			}
 
 			Row, _ := strconv.Atoi(words[1])
@@ -150,7 +149,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			}
 		case "w":
 			if len(words) < 3 {
-				log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)
+				Log.Panicf("Invalid command format (not enough parameters for water): \"%s\"", line)
 			}
 
 			Row, _ := strconv.Atoi(words[1])
@@ -159,7 +158,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 			square.Destroy()
 		case "a":
 			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
+				Log.Panicf("Invalid command format (not enough parameters for ant): \"%s\"", line)
 			}
 			Row, _ := strconv.Atoi(words[1])
 			Col, _ := strconv.Atoi(words[2])
@@ -173,7 +172,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 					if square.HasHill() && square.item.IsMine() {
 						ant = s.NewAnt(square)
 					} else {
-						log.Panicf("No record of my ant at %v", square)
+						Log.Panicf("No record of my ant at %v", square)
 					}
 				}
 			}
@@ -182,7 +181,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 		case "d":
 			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)
+				Log.Panicf("Invalid command format (not enough parameters for dead ant): \"%s\"", line)
 			}
 			Row, _ := strconv.Atoi(words[1])
 			Col, _ := strconv.Atoi(words[2])
@@ -196,7 +195,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 					if square.HasHill() && square.item.IsMine() {
 						ant = s.NewAnt(square)
 					} else {
-						log.Panicf("No record of my ant at %v", square)
+						Log.Panicf("No record of my ant at %v", square)
 					}
 				}
 
@@ -207,7 +206,7 @@ func (s *State) Loop(b Bot, BetweenTurnWork func()) os.Error {
 
 		case "h":
 			if len(words) < 4 {
-				log.Panicf("Invalid command format (not enough parameters for hill): \"%s\"", line)
+				Log.Panicf("Invalid command format (not enough parameters for hill): \"%s\"", line)
 			}
 			Row, _ := strconv.Atoi(words[1])
 			Col, _ := strconv.Atoi(words[2])

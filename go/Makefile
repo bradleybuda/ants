@@ -8,6 +8,7 @@ GOFILES=\
 	goal.go\
 	item.go\
 	location.go\
+	logger.go\
 	main.go\
 	MyBot.go\
 	square.go\
