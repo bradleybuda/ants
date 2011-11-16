@@ -29,7 +29,7 @@ func (l Location) RowColString(state *State) string {
 
 // TODO i think i need to implement "equality" as well
 
-func AddOffsetToLocation(state *State, offset Offset, location Location) Location {
+func AddOffsetToLocation(state *State, offset *Offset, location Location) Location {
 	newRow := state.NormalizeRow(offset.row + location.Row(state))
 	newCol := state.NormalizeCol(offset.col + location.Col(state))
 	return NewLocation(state, newRow, newCol)

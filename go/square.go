@@ -1,7 +1,6 @@
 package main
 
 import (
-	"container/vector"
 	"math"
 )
 
@@ -53,13 +52,11 @@ type Offset struct {
 	col int
 }
 
-var visibilityMask *vector.Vector = nil
-
-var Directions = map[Direction]Offset{
-	North: Offset{-1, 0},
-	South: Offset{1, 0},
-	West:  Offset{0, -1},
-	East:  Offset{0, 1},
+var Directions = map[Direction]*Offset{
+	North: &Offset{-1, 0},
+	South: &Offset{1, 0},
+	West:  &Offset{0, -1},
+	East:  &Offset{0, 1},
 }
 
 func (square *Square) String() string {
@@ -119,16 +116,16 @@ func (square *Square) Visit(state *State) int {
 	return observedCount
 }
 
+var visibilityMask []*Offset = make([]*Offset, 0)
+
 func (square *Square) VisibleSquares(state *State) *SquareSet {
 	// build the visiblity mask if it's never been initialized before
-	if visibilityMask == nil {
-		visibilityMask = new(vector.Vector)
-
+	if len(visibilityMask) == 0 {
 		viewRadius := (int)(math.Ceil(math.Sqrt((float64)(state.ViewRadius2))))
 		for rowOffset := -1 * viewRadius; rowOffset <= viewRadius; rowOffset++ {
 			for colOffset := -1 * viewRadius; colOffset <= viewRadius; colOffset++ {
 				if Distance2(state, 0, 0, rowOffset, colOffset) < state.ViewRadius2 {
-					visibilityMask.Push(Offset{rowOffset, colOffset})
+					visibilityMask = append(visibilityMask, &Offset{rowOffset, colOffset})
 				}
 			}
 		}
@@ -137,8 +134,7 @@ func (square *Square) VisibleSquares(state *State) *SquareSet {
 	// apply the visibility mask to this square
 	// TODO memoize result?
 	visible := make(SquareSet)
-	for _, elt := range *visibilityMask {
-		offset := elt.(Offset)
+	for _, offset := range visibilityMask {
 		otherLocation := AddOffsetToLocation(state, offset, square.location)
 		otherSquare, ok := state.AllSquares[otherLocation]
 		if ok {
@@ -173,7 +169,8 @@ func (square *Square) HasGoal(goal Goal) bool {
 
 func (square *Square) Neighbors() SquareSet {
 	if !square.neighborsCached {
-		offsets := [4]Offset{Offset{-1, 0}, Offset{1, 0}, Offset{0, -1}, Offset{0, 1}}
+		// TODO factor out this list of offsets, I have it elsewhere
+		offsets := [4]*Offset{&Offset{-1, 0}, &Offset{1, 0}, &Offset{0, -1}, &Offset{0, 1}}
 		for _, offset := range offsets {
 			location := AddOffsetToLocation(square.state, offset, square.location)
 			neighbor := square.state.SquareAtLocation(location)
