@@ -21,6 +21,30 @@ type Item interface {
 	ObservableByAnyAnt() bool
 }
 
+type BaseItem struct {
+	lastSeen int
+	observableFrom SquareSet
+}
+
+func (item *BaseItem) Sense(state *State) {
+	item.lastSeen = state.Turn
+}
+
+func (item *BaseItem) TimeSinceLastSeen(state *State) int {
+	return state.Turn - item.lastSeen
+}
+
+func (item *BaseItem) ObservableByAnyAnt() bool {
+	for _, square := range item.observableFrom {
+		if square.ant != nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+
 type ItemSet map[*Square]Item
 
 var AllItems = make(ItemSet)
@@ -42,9 +66,8 @@ func (items ItemSet) DestroyUnsensed(state *State) {
 }
 
 type Food struct {
+	BaseItem
 	square *Square
-	observableFrom vector.Vector
-	lastSeen int
 }
 
 func AllFood() vector.Vector {
@@ -84,33 +107,14 @@ func (food *Food) ItemType() ItemType {
 	return FoodType
 }
 
-func (food *Food) Sense(state *State) {
-	food.lastSeen = state.Turn
-}
-
 func (food *Food) Exists() bool {
 	return food.square.item == food
 }
 
-func (food *Food) TimeSinceLastSeen(state *State) int {
-	return state.Turn - food.lastSeen
-}
-
-func (food *Food) ObservableByAnyAnt() bool {
-	for _, square := range food.observableFrom {
-		if square.(*Square).ant != nil {
-			return true
-		}
-	}
-
-	return false
-}
-
 type Hill struct {
+	BaseItem
 	owner int
 	square *Square
-	observableFrom vector.Vector
-	lastSeen int
 }
 
 func (state *State) NewHill(owner int, square *Square) *Hill {
@@ -128,10 +132,6 @@ func (state *State) NewHill(owner int, square *Square) *Hill {
 	return newHill
 }
 
-func (hill *Hill) Sense(state *State) {
-	hill.lastSeen = state.Turn
-}
-
 func (food *Hill) ItemType() ItemType {
 	return HillType
 }
@@ -146,18 +146,4 @@ func (hill *Hill) IsEnemy() bool {
 
 func (hill *Hill) Exists() bool {
 	return hill.square.HasHill() && hill.square.item.(*Hill) == hill
-}
-
-func (hill *Hill) TimeSinceLastSeen(state *State) int {
-	return state.Turn - hill.lastSeen
-}
-
-func (hill *Hill) ObservableByAnyAnt() bool {
-	for _, square := range hill.observableFrom {
-		if square.(*Square).ant != nil {
-			return true
-		}
-	}
-
-	return false
 }

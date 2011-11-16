@@ -121,8 +121,7 @@ func (square *Square) Visit(state *State) int {
 	square.visited = true
 
 	observedCount := 0
-	for _, elt := range square.VisibleSquares(state) {
-		vis := elt.(*Square)
+	for _, vis := range square.VisibleSquares(state) {
 		if !vis.observed {
 			vis.Observe(state)
 			observedCount++
@@ -132,7 +131,7 @@ func (square *Square) Visit(state *State) int {
 	return observedCount
 }
 
-func (square *Square) VisibleSquares(state *State) vector.Vector {
+func (square *Square) VisibleSquares(state *State) SquareSet {
 	// build the visiblity mask if it's never been initialized before
 	if visibilityMask == nil {
 		visibilityMask = new(vector.Vector)
@@ -149,13 +148,13 @@ func (square *Square) VisibleSquares(state *State) vector.Vector {
 
 	// apply the visibility mask to this square
 	// TODO memoize result?
-	visible := vector.Vector{}
+	visible := make(SquareSet)
 	for _, elt := range *visibilityMask {
 		offset := elt.(Offset)
 		otherLocation := AddOffsetToLocation(state, offset, square.location)
 		otherSquare, ok := state.AllSquares[otherLocation]
 		if ok {
-			visible.Push(otherSquare)
+			visible.Add(otherSquare)
 		}
 	}
 
