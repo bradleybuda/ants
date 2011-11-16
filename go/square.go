@@ -149,6 +149,7 @@ func (square *Square) VisibleSquares(state *State) *SquareSet {
 }
 
 func (square *Square) Observe(state *State) {
+	state.ObservedSquares.Add(square)
 	square.observed = true
 }
 
@@ -210,4 +211,18 @@ func (square *Square) RemoveDeadNeighbor(neighbor *Square) {
 	if square.neighborsCached {
 		square.neighbors.Remove(neighbor)
 	}
+}
+
+func (square *Square) IsFrontier() bool {
+	if !square.observed {
+		return false
+	}
+
+	for _, neighbor := range square.Neighbors() {
+		if !neighbor.observed {
+			return true
+		}
+	}
+
+	return false
 }

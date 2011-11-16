@@ -40,6 +40,7 @@ func NewBot(s *State) Bot {
 	mb := new(MyBot)
 	mb.goalQueue = new(GoalQueue)
 	heap.Init(mb.goalQueue)
+	s.ObservedSquares = make(SquareSet)
 
 	Log.Printf("New bot created!")
 
@@ -71,7 +72,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	goalStats := make(map[GoalType]int)
 	// group goals by type (TODO maybe we should just keep them in this form?)
-	for _, elt := range s.AllEat() { // TODO
+	for _, elt := range s.AllGoals() {
 		goal := elt.(Goal)
 		goalType := goal.GoalType()
 		goalStats[goalType]++
@@ -89,12 +90,11 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	}
 
 	// Figure out which goals are new and seed them into the DFS queue
-	for _, elt := range s.AllEat() { // TODO
-		eat := elt.(*Eat)
-		square := eat.Square()
-		if !square.HasGoal(eat) {
+	for _, goal := range s.AllGoals() {
+		square := goal.Destination()
+		if !square.HasGoal(goal) {
 			route := make(Route, 0)
-			newNode := SearchNode{square, eat, route}
+			newNode := SearchNode{square, goal, route}
 			//Log.Printf("BFS: Adding seed node: %+v", newNode)
 			heap.Push(mb.goalQueue, newNode)
 		}

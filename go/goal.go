@@ -1,15 +1,15 @@
 package main
 
 import (
-	"container/vector"
 	"fmt"
-	"rand" // TODO seed
+	"rand"
 )
 
 type GoalType int
 
 const (
 	EatType = iota
+	ExploreType
 	WanderType
 )
 
@@ -18,10 +18,26 @@ type Goal interface {
 	IsValid() bool
 	Priority() float64
 	String() string
+	Destination() *Square
+}
+
+type DestinationGoal struct {
+	destination *Square
+}
+
+func (goal *DestinationGoal) Destination() *Square {
+	return goal.destination
+}
+
+func (state *State) AllGoals() []Goal {
+	result := make([]Goal, 0)
+	result = append(result, state.AllEat()...)
+	result = append(result, state.AllExplore()...)
+	return result
 }
 
 type Eat struct {
-	destination *Square
+	*DestinationGoal
 	food        *Food
 }
 
@@ -37,9 +53,6 @@ func (eat *Eat) Priority() float64 {
 	return 9.9 // TODO
 }
 
-func (eat *Eat) Square() *Square {
-	return eat.destination
-}
 
 func (eat *Eat) String() string {
 	return fmt.Sprintf("[Eat food at %v from %v]", eat.food.square, eat.destination)
@@ -47,8 +60,8 @@ func (eat *Eat) String() string {
 
 var EatIndex = make(map[*Square]map[*Food]*Eat)
 
-func (state *State) AllEat() vector.Vector {
-	results := vector.Vector{}
+func (state *State) AllEat() []Goal {
+	results := make([]Goal, 0)
 
 	for _, f := range AllFood() {
 		food := f.(*Food)
@@ -63,7 +76,7 @@ func (state *State) AllEat() vector.Vector {
 				EatIndex[neighbor][food] = NewEat(neighbor, food)
 			}
 
-			results.Push(EatIndex[neighbor][food])
+			results = append(results, EatIndex[neighbor][food])
 		}
 	}
 
@@ -80,7 +93,7 @@ func NewEat(destination *Square, food *Food) *Eat {
 	}
 
 	eat := new(Eat)
-	eat.destination = destination
+	eat.DestinationGoal = &DestinationGoal{destination}
 	eat.food = food
 	return eat
 }
@@ -129,4 +142,52 @@ func (*Wander) IsValid() bool {
 
 func (*Wander) String() string {
 	return "[Wander randomly]"
+}
+
+func (*Wander) Destination() *Square {
+	panic("Don't call me!")
+}
+
+type Explore struct {
+	*DestinationGoal
+}
+
+var ExploreIndex = make(map[*Square]*Explore)
+
+func (state *State) AllExplore() []Goal {
+	results := make([]Goal, 0)
+
+	for _, square := range state.ObservedSquares {
+		if square.IsFrontier() {
+			explore := NewExplore(square)
+			ExploreIndex[square] = explore
+			results = append(results, explore)
+		}
+	}
+
+	return results
+}
+
+func NewExplore(destination *Square) *Explore {
+	if destination == nil {
+		panic("destination nil!")
+	}
+
+	return &Explore{&DestinationGoal{destination}}
+}
+
+func (expore *Explore) GoalType() GoalType {
+	return ExploreType
+}
+
+func (explore *Explore) IsValid() bool {
+	return !explore.destination.visited
+}
+
+func (explore *Explore) Priority() float64 {
+	return 8.0 // TODO
+}
+
+func (explore *Explore) String() string {
+	return fmt.Sprintf("Explore destination %v", explore.destination)
 }
