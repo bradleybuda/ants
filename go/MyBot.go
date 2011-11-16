@@ -177,7 +177,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 		// Iterate through all the square's goals doing two things: purge invalids, and find highest priority
 		var bestGoal Goal = WanderInstance
-		bestRoute := WanderInstance.pickRouteForAnt(s, ant)
+		bestRoute := WanderInstance.PickRouteForAnt(s, ant)
 
 		for goal, route := range square.goals {
 			if goal.IsValid() {

@@ -89,8 +89,12 @@ type Wander struct {}
 
 var WanderInstance = new(Wander)
 
-func (_ *Wander) pickRouteForAnt(state *State, ant *Ant) []*Square {
+func (_ *Wander) PickRouteForAnt(state *State, ant *Ant) []*Square {
 	valid := ant.square.Neighbors().Minus(ant.square.Blacklist())
+	if len(valid) == 0 {
+		return make(Route, 0)
+	}
+
 	var randomSquare *Square = nil
 	maxScore := 0.0
 	for _, square := range valid {
@@ -101,7 +105,7 @@ func (_ *Wander) pickRouteForAnt(state *State, ant *Ant) []*Square {
 		}
 	}
 
-	route := make([]*Square, 1)
+	route := make(Route, 1)
 	route[0] = randomSquare
 	return route
 }
