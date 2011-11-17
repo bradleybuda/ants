@@ -10,7 +10,7 @@ type Square struct {
 	observed        bool
 	visited         bool
 	item            Item
-	goals           map[Goal]Route
+	goals           map[GoalId]Route
 	ant             *Ant
 	nextAnt         *Ant
 	neighborsCached bool
@@ -24,7 +24,7 @@ func (state *State) CreateSquares() {
 	for row := 0; row < state.Rows; row++ {
 		for col := 0; col < state.Cols; col++ {
 			loc := NewLocation(state, row, col)
-			square := Square{state: state, location: loc, goals: make(map[Goal]Route), neighbors: make(SquareSet), deferredSearchNodes: make([]*SearchNode, 0)}
+			square := Square{state: state, location: loc, goals: make(map[GoalId]Route), neighbors: make(SquareSet), deferredSearchNodes: make([]*SearchNode, 0)}
 			state.AllSquares.Add(&square)
 		}
 	}
@@ -163,7 +163,7 @@ func (square *Square) HasEnemyAnt() bool {
 }
 
 func (square *Square) HasGoal(goal Goal) bool {
-	_, ok := square.goals[goal]
+	_, ok := square.goals[goal.Id()]
 	return ok
 }
 

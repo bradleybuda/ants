@@ -13,95 +13,79 @@ const (
 	WanderType
 )
 
+type GoalId int
+var nextGoalId GoalId = 0
+var AllGoals map[GoalId]Goal = make(map[GoalId]Goal)
+
+func (id GoalId) Goal() Goal {
+	return AllGoals[id]
+}
+
 type Goal interface {
+	Id() GoalId
 	GoalType() GoalType
 	IsValid() bool
 	Priority() float64
 	String() string
 	Destination() *Square
+	AddAnt(*Ant)
+	Die()
 }
 
 type DestinationGoal struct {
+	id GoalId
 	destination *Square
+	ants []*Ant
+}
+
+func (state *State) GenerateGoals() {
+	state.GenerateEat()
+	state.GenerateExplore()
+}
+
+func NewDestinationGoal(destination *Square) *DestinationGoal {
+	// intentionally do not add the goal to the destination square; let MyBot do that
+	goal := &DestinationGoal{nextGoalId, destination, make([]*Ant, 0)}
+	nextGoalId++
+	return goal
+}
+
+func (goal *DestinationGoal) Id() GoalId {
+	return goal.id
 }
 
 func (goal *DestinationGoal) Destination() *Square {
 	return goal.destination
 }
 
-func (state *State) AllGoals() []Goal {
-	result := make([]Goal, 0)
-	result = append(result, state.AllEat()...)
-	result = append(result, state.AllExplore()...)
-	return result
+func (goal *DestinationGoal) AddAnt(ant *Ant) {
+	goal.ants = append(goal.ants, ant)
 }
 
-type Eat struct {
-	*DestinationGoal
-	food        *Food
+func (goal *DestinationGoal) Die() {
+	// clear any ants participating in this goal
+	for _, ant := range goal.ants {
+		ant.goal = nil
+	}
+
+	// remove from master index
+	AllGoals[goal.id] = nil, false
+
+	// remove routes to the goal from the map
+	goal.RemoveFromSquare(goal.destination)
 }
 
-func (eat *Eat) GoalType() GoalType {
-	return EatType
-}
-
-func (eat *Eat) IsValid() bool {
-	return eat.food.Exists()
-}
-
-func (eat *Eat) Priority() float64 {
-	return 9.9 // TODO
-}
-
-
-func (eat *Eat) String() string {
-	return fmt.Sprintf("[Eat food at %v from %v]", eat.food.square, eat.destination)
-}
-
-var EatIndex = make(map[*Square]map[*Food]*Eat)
-
-func (state *State) AllEat() []Goal {
-	results := make([]Goal, 0)
-
-	for _, food := range AllFood() {
-		for _, neighbor := range food.square.Neighbors() {
-			_, ok := EatIndex[neighbor]
-			if !ok {
-				EatIndex[neighbor] = make(map[*Food]*Eat)
-			}
-
-			_, okAgain := EatIndex[neighbor][food]
-			if !okAgain {
-				EatIndex[neighbor][food] = NewEat(neighbor, food)
-			}
-
-			results = append(results, EatIndex[neighbor][food])
+func (goal *DestinationGoal) RemoveFromSquare(square *Square) {
+	_, ok := square.goals[goal.id]
+	if ok {
+		square.goals[goal.id] = nil, false
+		for _, neighbor := range square.Neighbors() {
+			goal.RemoveFromSquare(neighbor)
 		}
 	}
-
-	return results
 }
 
-func NewEat(destination *Square, food *Food) *Eat {
-	if destination == nil {
-		panic("destination nil!")
-	}
-
-	if food == nil {
-		panic("food nil!")
-	}
-
-	eat := new(Eat)
-	eat.DestinationGoal = &DestinationGoal{destination}
-	eat.food = food
-	return eat
-}
-
-type Wander struct{}
-
-var WanderInstance = new(Wander)
-
-func (_ *Wander) PickRouteForAnt(state *State, ant *Ant) []*Square {
+func PickWanderForAnt(state *State, ant *Ant) []*Square {
 	valid := ant.square.Neighbors().Minus(ant.square.Blacklist())
 	if len(valid) == 0 {
 		return make(Route, 0)
@@ -130,24 +114,62 @@ func (_ *Wander) PickRouteForAnt(state *State, ant *Ant) []*Square {
 	return route
 }
 
-func (*Wander) Priority() float64 {
-	return 0.0 // TODO
+type Eat struct {
+	*DestinationGoal
+	food        *Food
 }
 
-func (*Wander) GoalType() GoalType {
-	return WanderType
+func (eat *Eat) GoalType() GoalType {
+	return EatType
 }
 
-func (*Wander) IsValid() bool {
-	return false // only lasts one turn
+func (eat *Eat) IsValid() bool {
+	return eat.food.Exists()
 }
 
-func (*Wander) String() string {
-	return "[Wander randomly]"
+func (eat *Eat) Priority() float64 {
+	return 9.9 // TODO
 }
 
-func (*Wander) Destination() *Square {
-	panic("Don't call me!")
+func (eat *Eat) String() string {
+	return fmt.Sprintf("[Eat food at %v from %v]", eat.food.square, eat.destination)
+}
+
+// TODO nothing ever cleans this index up
+var EatIndex = make(map[*Square]map[*Food]*Eat)
+
+func (state *State) GenerateEat() {
+	for _, food := range AllFood() {
+		for _, neighbor := range food.square.Neighbors() {
+			_, ok := EatIndex[neighbor]
+			if !ok {
+				EatIndex[neighbor] = make(map[*Food]*Eat)
+			}
+
+			_, okAgain := EatIndex[neighbor][food]
+			if !okAgain {
+				EatIndex[neighbor][food] = NewEat(neighbor, food)
+			}
+		}
+	}
+}
+
+func NewEat(destination *Square, food *Food) *Eat {
+	if destination == nil {
+		panic("destination nil!")
+	}
+
+	if food == nil {
+		panic("food nil!")
+	}
+
+	eat := new(Eat)
+	eat.DestinationGoal = NewDestinationGoal(destination)
+	eat.food = food
+
+	AllGoals[eat.Id()] = eat
+
+	return eat
 }
 
 type Explore struct {
@@ -156,18 +178,15 @@ type Explore struct {
 
 var ExploreIndex = make(map[*Square]*Explore)
 
-func (state *State) AllExplore() []Goal {
-	results := make([]Goal, 0)
-
+func (state *State) GenerateExplore() {
 	for _, square := range state.ObservedSquares {
 		if square.IsFrontier() {
-			explore := NewExplore(square)
-			ExploreIndex[square] = explore
-			results = append(results, explore)
+			_, ok := ExploreIndex[square]
+			if !ok {
+				ExploreIndex[square] = NewExplore(square)
+			}
 		}
 	}
-
-	return results
 }
 
 func NewExplore(destination *Square) *Explore {
@@ -175,7 +194,11 @@ func NewExplore(destination *Square) *Explore {
 		panic("destination nil!")
 	}
 
-	return &Explore{&DestinationGoal{destination}}
+	explore := &Explore{NewDestinationGoal(destination)}
+
+	AllGoals[explore.Id()] = explore
+
+	return explore
 }
 
 func (expore *Explore) GoalType() GoalType {

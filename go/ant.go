@@ -51,3 +51,16 @@ func (ant *Ant) OrderTo(state *State, adjacent *Square) {
 func (ant *Ant) Die(state *State) {
 	state.LivingAnts[ant.id] = nil, false
 }
+
+// nil is a valid argument here (is this a good idea?)
+func (ant *Ant) SetGoal(goal Goal) {
+	ant.goal = goal
+	if goal != nil {
+		goal.AddAnt(ant)
+	}
+}
+
+func (ant *Ant) Route() Route {
+	return ant.square.goals[ant.goal.Id()]
+}
+

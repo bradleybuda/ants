@@ -52,34 +52,21 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	// Make a shared list of goals used by all ants
 	// TODO can skip this until we actually need to pick a goal
 	Log.Printf("Looking for goals")
+	s.GenerateGoals()
 
-	goalStats := make(map[GoalType]int)
-	// group goals by type (TODO maybe we should just keep them in this form?)
-	for _, elt := range s.AllGoals() {
-		goal := elt.(Goal)
-		goalType := goal.GoalType()
-		goalStats[goalType]++
-	}
-	Log.Printf("Found initial goals: %v", goalStats) // TODO this is pretty useless right now
-
-	// Purge all invalid ant goals
-	// TODO can push this down to the second loop
-	for _, ant := range s.LivingAnts {
-		if (ant.goal != nil) && (!ant.goal.IsValid()) {
-			Log.Printf("%v goal became invalid, clearing it (maybe completed?)", ant)
-			ant.goal = nil
-		}
-	}
-
-	// Figure out which goals are new and seed them into the DFS queue
-	for _, goal := range s.AllGoals() {
+	// Loop over all goals and seed them into the search queue if new, or clean them up if invalid
+	for _, goal := range AllGoals {
 		square := goal.Destination()
 		if !square.HasGoal(goal) {
+			// Goal is new
 			route := make(Route, 0)
 			newNode := NewSearchNode(square, goal, route)
-			//Log.Printf("BFS: Adding seed node: %+v", newNode)
+			Log.Printf("BFS: Adding seed node: %+v", newNode)
 			mb.goalQueue.Push(newNode)
-		}
+		} else if !goal.IsValid() {
+			// Goal should quiesce
+			goal.Die()
+		} // else do nothing to goal
 	}
 
 	Log.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
@@ -113,7 +100,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		// Record the route to this goal on the square
-		square.goals[goal] = route
+		square.goals[goal.Id()] = route
 
 		// don't search any further from this node if we've maxed out
 		if nodeSearchRadius >= maxSearchRadius {
@@ -155,33 +142,42 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	// Issue orders for each ant's best-available goal
 	// TODO this should be treated as a queue, not an array
 	for _, ant := range s.LivingAnts {
-		Log.Printf("Orders: updating orders for %v", ant)
-
-		// Find the best goal that this square knows about and is passable
+		// check passable squares
 		square := ant.square
 		passable := square.Neighbors().Minus(square.Blacklist())
 
-		// Iterate through all the square's goals doing two things: purge invalids, and find highest priority
-		var bestGoal Goal = WanderInstance
-		bestRoute := WanderInstance.PickRouteForAnt(s, ant)
+		// try to assign a goal if we don't have one
+		if ant.goal == nil {
+			Log.Printf("Orders: finding new orders for %v", ant)
 
-		for goal, route := range square.goals {
-			if goal.IsValid() {
+			// Iterate through all the square's goals and find the highest priority passable route
+			var bestGoal Goal = nil
+			for goalId, route := range square.goals {
 				passableRoute := (len(route) == 0) || passable.Member(route[0])
-				if goal.Priority() > bestGoal.Priority() && passableRoute {
+				goal := goalId.Goal()
+				if passableRoute && (bestGoal == nil || goal.Priority() > bestGoal.Priority()) {
 					// TODO break priority ties by route length
 					bestGoal = goal
-					bestRoute = route
 				}
-			} else {
-				square.goals[goal] = nil, false
 			}
+
+			ant.SetGoal(bestGoal)
 		}
 
-		ant.goal = bestGoal
-		Log.Printf("Orders: new route for %v is %v", ant, bestRoute)
-		if len(bestRoute) > 0 {
-			ant.OrderTo(s, bestRoute[0])
+		// Execute either the assigned route or a random one
+		var route Route = nil
+		if ant.goal == nil {
+			route = PickWanderForAnt(s, ant)
+		} else {
+			route = ant.Route()
+		}
+
+		Log.Printf("Orders: route for %v is %v", ant, route)
+		passableRoute := (len(route) == 0) || passable.Member(route[0])
+		if len(route) > 0 && passableRoute {
+			ant.OrderTo(s, route[0])
+		} else {
+			Log.Printf("Route is impassable, doing nothing")
 		}
 	}
 
