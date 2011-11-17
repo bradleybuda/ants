@@ -44,9 +44,9 @@ func (s *State) Start() os.Error {
 
 		switch words[0] {
 		case "loadtime":
-			s.LoadTime = param
+			s.LoadTime = (int64)(param)
 		case "turntime":
-			s.TurnTime = param
+			s.TurnTime = (int64)(param)
 		case "rows":
 			s.Rows = param
 		case "cols":

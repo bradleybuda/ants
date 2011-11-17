@@ -2,8 +2,8 @@ package main
 
 //State keeps track of everything we need to know about the state of the game
 type State struct {
-	LoadTime      int //in milliseconds
-	TurnTime      int //in milliseconds
+	LoadTime      int64 //in milliseconds
+	TurnTime      int64 //in milliseconds
 	Rows          int //number of rows in the map
 	Cols          int //number of columns in the map
 	Turns         int //maximum number of turns in the game
