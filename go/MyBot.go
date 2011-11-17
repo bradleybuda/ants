@@ -1,45 +1,17 @@
 package main
 
 import (
-	"container/vector"
-	"container/heap"
-	"fmt"
 	"os"
 )
 
-type Route []*Square
-
-type SearchNode struct {
-	square *Square
-	goal   Goal
-	route  Route
-}
-
-func (sn *SearchNode) String() string {
-	return fmt.Sprintf("[Search for a path to %v at %v with existing route %v]", sn.goal, sn.square, sn.route)
-}
-
-type GoalQueue struct {
-	vector.Vector
-}
-
-// i,j are indices of elements to compare
-func (gq *GoalQueue) Less(i, j int) bool {
-	iElt := gq.At(i).(*SearchNode)
-	jElt := gq.At(j).(*SearchNode)
-
-	return len(iElt.route) < len(jElt.route)
-}
-
 type MyBot struct {
-	goalQueue *GoalQueue
+	goalQueue *SearchQueue
 }
 
 //NewBot creates a new instance of your bot
 func NewBot(s *State) Bot {
 	mb := new(MyBot)
-	mb.goalQueue = new(GoalQueue)
-	heap.Init(mb.goalQueue)
+	mb.goalQueue = NewSearchQueue()
 	s.ObservedSquares = make(SquareSet)
 	s.LivingAnts = make(map[int]*Ant)
 
@@ -65,7 +37,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 	// TODO have an index of newly observed squares to avoid walking all?
 	for _, square := range s.ObservedSquares {
 		for _, searchNode := range square.deferredSearchNodes {
-			heap.Push(mb.goalQueue, searchNode)
+			mb.goalQueue.Push(searchNode)
 			restoredSearchNodes++
 		}
 
@@ -104,9 +76,9 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		square := goal.Destination()
 		if !square.HasGoal(goal) {
 			route := make(Route, 0)
-			newNode := &SearchNode{square, goal, route}
+			newNode := NewSearchNode(square, goal, route)
 			//Log.Printf("BFS: Adding seed node: %+v", newNode)
-			heap.Push(mb.goalQueue, newNode)
+			mb.goalQueue.Push(newNode)
 		}
 	}
 
@@ -123,7 +95,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 		}
 
 		// visit the first node in the queue and unpack it
-		node := heap.Pop(mb.goalQueue).(*SearchNode)
+		node := mb.goalQueue.Pop()
 		nodeSearchRadius := len(node.route)
 		if nodeSearchRadius >= searchRadius {
 			searchRadius = nodeSearchRadius
@@ -159,7 +131,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 				newRoute := make(Route, 0)
 				newRoute = append(newRoute, square)
 				newRoute = append(newRoute, route...)
-				newNode := &SearchNode{neighbor, goal, newRoute}
+				newNode := NewSearchNode(neighbor, goal, newRoute)
 
 				// Don't try to search nodes we haven't observed yet (they could
 				// be water). Instead, set aside those nodes and restore them
@@ -169,7 +141,7 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 					neighbor.deferredSearchNodes = append(neighbor.deferredSearchNodes, newNode)
 				} else {
 					//Log.Printf("BFS: Adding new node: %+v", newNode)
-					heap.Push(mb.goalQueue, newNode)
+					mb.goalQueue.Push(newNode)
 				}
 			}
 		}

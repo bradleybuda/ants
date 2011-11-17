@@ -11,6 +11,7 @@ GOFILES=\
 	logger.go\
 	main.go\
 	MyBot.go\
+	search_queue.go\
 	square.go\
 	square_set.go\
 	state.go\
