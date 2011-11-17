@@ -71,11 +71,11 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	Log.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
 
-	maxSearchRadius := 6 // hack to limit memory usage
+	maxSearchRadius := 10 // hack to limit memory usage
 	searchRadius := 0
 	searchCount := 0
 
-	searchTimeNanos := (int64)(s.TurnTime * 300000)
+	searchTimeNanos := (int64)(s.TurnTime * 800000)
 	RunTimeoutLoop(searchTimeNanos, func() bool {
 		if mb.goalQueue.Len() == 0 {
 			return false // stop looping
