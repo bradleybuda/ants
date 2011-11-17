@@ -116,7 +116,7 @@ func (food *Food) Exists() bool {
 
 type Hill struct {
 	BaseItem
-	owner  int
+	owner int
 }
 
 func (state *State) NewHill(owner int, square *Square) *Hill {

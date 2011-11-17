@@ -22,9 +22,9 @@ func (sn *SearchNode) String() string {
 }
 
 type SearchQueue struct {
-	buckets []*SearchNode
+	buckets    []*SearchNode
 	nextBucket int
-	length int
+	length     int
 }
 
 func NewSearchQueue() *SearchQueue {

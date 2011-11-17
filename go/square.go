@@ -5,16 +5,16 @@ import (
 )
 
 type Square struct {
-	state           *State
-	location        Location
-	observed        bool
-	visited         bool
-	item            Item
-	goals           map[GoalId]Route
-	ant             *Ant
-	nextAnt         *Ant
-	neighborsCached bool
-	neighbors       SquareSet
+	state               *State
+	location            Location
+	observed            bool
+	visited             bool
+	item                Item
+	goals               map[GoalId]Route
+	ant                 *Ant
+	nextAnt             *Ant
+	neighborsCached     bool
+	neighbors           SquareSet
 	deferredSearchNodes []*SearchNode
 }
 

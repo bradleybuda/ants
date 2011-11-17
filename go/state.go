@@ -4,19 +4,19 @@ package main
 type State struct {
 	LoadTime      int64 //in milliseconds
 	TurnTime      int64 //in milliseconds
-	Rows          int //number of rows in the map
-	Cols          int //number of columns in the map
-	Turns         int //maximum number of turns in the game
-	ViewRadius2   int //view radius squared
-	AttackRadius2 int //battle radius squared
-	SpawnRadius2  int //spawn radius squared
-	Turn          int //current turn number
+	Rows          int   //number of rows in the map
+	Cols          int   //number of columns in the map
+	Turns         int   //maximum number of turns in the game
+	ViewRadius2   int   //view radius squared
+	AttackRadius2 int   //battle radius squared
+	SpawnRadius2  int   //spawn radius squared
+	Turn          int   //current turn number
 
 	NextAntId  int
 	LivingAnts map[int]*Ant
 	Stats      *Stats
 
-	AllSquares SquareSet
+	AllSquares      SquareSet
 	ObservedSquares SquareSet
 }
 

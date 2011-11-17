@@ -71,7 +71,11 @@ func (mb *MyBot) DoTurn(s *State) os.Error {
 
 	Log.Printf("Search queue has size %v after goal generation", mb.goalQueue.Len())
 
-	maxSearchRadius := 10 // hack to limit memory usage
+	// hack to limit memory usage
+	// TODO make this a function of the goal type? are we ever going to be able to remove this?
+	maxSearchRadius := 10
+
+	// stats
 	searchRadius := 0
 	searchCount := 0
 

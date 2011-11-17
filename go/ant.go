@@ -63,4 +63,3 @@ func (ant *Ant) SetGoal(goal Goal) {
 func (ant *Ant) Route() Route {
 	return ant.square.goals[ant.goal.Id()]
 }
-

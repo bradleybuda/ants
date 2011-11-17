@@ -14,6 +14,7 @@ const (
 )
 
 type GoalId int
+
 var nextGoalId GoalId = 0
 var AllGoals map[GoalId]Goal = make(map[GoalId]Goal)
 
@@ -33,9 +34,9 @@ type Goal interface {
 }
 
 type DestinationGoal struct {
-	id GoalId
+	id          GoalId
 	destination *Square
-	ants []*Ant
+	ants        []*Ant
 }
 
 func (state *State) GenerateGoals() {
@@ -116,7 +117,7 @@ func PickWanderForAnt(state *State, ant *Ant) []*Square {
 
 type Eat struct {
 	*DestinationGoal
-	food        *Food
+	food *Food
 }
 
 func (eat *Eat) GoalType() GoalType {
