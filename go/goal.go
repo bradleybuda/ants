@@ -217,3 +217,12 @@ func (explore *Explore) Priority() float64 {
 func (explore *Explore) String() string {
 	return fmt.Sprintf("Explore destination %v", explore.destination)
 }
+
+/* Goal idea for escort - every ant is constantly drawing a route as
+ it goes (all squares visited). When an ant is pursuing a goal, that
+ route "activates" and any ants on the route can follow it as a goal
+ (instead of wandering).
+
+ In other words, if Ant A has no goal, and the square it is on has Ant B's history s.t. Ant B has a goal, then Ant A's route becoms B's history
+*/
+
