@@ -3,16 +3,19 @@ package main
 import "time"
 
 func RunTimeoutLoop(durationNanos int64, body func() bool) {
-	startNanos := time.Nanoseconds()
-	cutoff := startNanos + durationNanos
 	iterations := 0
+	timedOut := false
+	timer := time.AfterFunc(durationNanos, func() {
+		timedOut = true
+	})
 
-	for body() {
+	for !timedOut && body() {
 		iterations++
-		if time.Nanoseconds() > cutoff {
-			break
-		}
 	}
 
-	Log.Printf("Loop completed %v iterations in %v nanos", iterations, time.Nanoseconds()-startNanos)
+	if timer.Stop() {
+		Log.Printf("Finished %v iterations without timing out", iterations)
+	} else {
+		Log.Printf("Timed out after finishing %v iterations", iterations)
+	}
 }
